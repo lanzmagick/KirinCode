@@ -66,13 +66,39 @@ Tiada proses npm install, backend atau build diperlukan. index.html berada terus
 
 ## Struktur projek
 
-- index.html — antaramuka GitHub Pages dan CDN
-- style.css — tema dan susun atur desktop/mobile
-- app.js — editor, fail, ZIP, carian, session dan language override
-- repo-explorer.js — baca GitHub public repo tree dan blob API
-- repo.css — gaya dialog Explorer dan language picker
-- icon.svg — favicon KirinCode
-- scripts/check.mjs — pemeriksaan sintaks dan rujukan UI
+Semua kod berkaitan bahasa diletakkan dalam folder **languages/**. Fail pihak ketiga CodeMirror (core dan beberapa mode) masih dimuatkan melalui CDN; fail konfigurasi bahasa dan mode khas KirinCode disimpan dalam repo.
+
+```text
+KirinCode/
+├── index.html
+├── README.md
+├── assets/
+│   ├── css/
+│   │   ├── style.css
+│   │   └── repo.css
+│   ├── js/
+│   │   ├── app.js
+│   │   └── repo-explorer.js
+│   └── icons/
+│       └── icon.svg
+├── languages/
+│   ├── catalog.js
+│   └── valve-keyvalues.js
+├── scripts/
+│   └── check.mjs
+└── .github/
+    └── workflows/
+        └── validate.yml
+```
+
+
+- `index.html` — titik masuk GitHub Pages
+- `assets/css/` — tema utama dan gaya Repo Explorer
+- `assets/js/` — editor dan GitHub Repo Explorer
+- `assets/icons/` — favicon dan ikon
+- `languages/catalog.js` — pengesanan format, 24 pilihan bahasa dan rujukan CodeMirror
+- `languages/valve-keyvalues.js` — mode khas Valve VDF/VMT
+- `scripts/check.mjs` — pemeriksaan sintaks, laluan fail dan UI
 - .github/workflows/validate.yml — semakan automatik semasa push/PR
 
 ## Roadmap
