@@ -24,8 +24,13 @@ function renderPreview(){
  const file=active(),type=typeFor(file);
  $("preview-file").textContent=file?file.name:"Tiada fail";
  $("preview-kind").textContent=type?type.toUpperCase():"No Preview";
- $("preview-help").hidden=!!type;
- frame.hidden=!type;
+ const tooLarge=!!file&&file.content.length>200000;
+ $("preview-help").hidden=!!type&&!tooLarge;
+ frame.hidden=!type||tooLarge;
+ if(tooLarge){
+  $("preview-help").textContent="Preview dihadkan kepada 200,000 aksara untuk memastikan telefon kekal lancar. Fail masih boleh diedit dan disimpan.";
+  frame.srcdoc="";return;
+ }
  if(!type){
   $("preview-help").textContent=file?"Preview tersedia untuk fail .html, .htm, .md dan .markdown.":"Buka fail HTML atau Markdown untuk melihat preview.";
   frame.srcdoc="";return;
