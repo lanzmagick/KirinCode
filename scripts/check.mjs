@@ -6,6 +6,7 @@ function get(path) {
   return readFileSync(path, "utf8");
 }
 const html = get("index.html");
+// Files listed in index.html are loaded at startup; lazy-loaded scripts are validated separately.
 const sourcePaths = [
   "assets/js/app.js",
   "assets/js/repo-explorer.js",
@@ -32,8 +33,14 @@ for (const path of sourcePaths) {
   }
 }
 
-for (const path of [...sourcePaths, "assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/icons/icon.svg"]) {
-  assert.ok(html.includes('"' + path + '"'), "Missing local path in HTML: " + path);
+const lazyLoadedPaths = new Set(["languages/_shared/simple.js"]);
+for (const path of [...sourcePaths.filter(path => !lazyLoadedPaths.has(path)), "assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/icons/icon.svg"]) {
+  assert.ok(html.includes('"' + path + '"'), "Missing startup asset path in HTML: " + path);
+}
+// A lazily loaded script is expected in the local language loader, NOT as a script tag in index.html.
+const modeLoader = get("languages/loader.js");
+for (const path of lazyLoadedPaths) {
+  assert.ok(modeLoader.includes(path.replace(/^languages\//, "")), "Lazy script not registered: " + path);
 }
 const dependencyOrder = ["languages/_shared/meta.js", "languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/loader.js", "languages/catalog.js", "assets/js/workbench-core.js", "assets/js/app.js", "assets/js/workbench.js", "assets/js/repo-explorer.js"];
 for (let i = 1; i < dependencyOrder.length; i++) {
