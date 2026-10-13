@@ -87,6 +87,7 @@ Semua kod berkaitan bahasa diletakkan dalam folder **languages/**. Fail pihak ke
 KirinCode/
 ├── index.html
 ├── README.md
+├── LICENSE.md
 ├── assets/
 │   ├── css/
 │   │   ├── style.css
@@ -141,6 +142,14 @@ KirinCode/
 - [ ] Live Preview Markdown berasaskan renderer lengkap CommonMark/GFM dan ujian pelayar automatik
 - [ ] Offline PWA dan pilihan backup draf
 - [ ] Penambahbaikan aksesibiliti, ujian E2E dan penskalaan fail besar
+
+## Lesen
+
+KirinCode diedarkan di bawah **[MIT License](LICENSE.md)**. Pengguna dibenarkan menggunakan, mengubah, mengedarkan dan mengkomersialkan kod projek dengan mengekalkan notis hak cipta serta lesen asal.
+
+**Copyright © 2026 LanzMagick.**
+
+Pustaka pihak ketiga seperti CodeMirror dan JSZip mempunyai lesen masing-masing; lesen KirinCode tidak menggantikan syarat lesen pustaka tersebut.
 
 ## Kredit
 
