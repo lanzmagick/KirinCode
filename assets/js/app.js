@@ -5,6 +5,7 @@ const $ = (id) => document.getElementById(id);
 const FILE_MAX = 4 * 1024 * 1024;
 const ZIP_MAX = 15 * 1024 * 1024;
 const tabs = [];
+let languageLoadTicket = 0;
 const listeners = new Set();
 function emit(kind){for(const callback of listeners){try{callback(kind);}catch(error){console.error("KirinCode subscriber:",error);}}}
 let current = null, seq = 0, quiet = false, toastTimeout, autosaveTimeout, dragLevel = 0;
@@ -43,11 +44,23 @@ function normPath(path) {
 function basename(path) { return normPath(path).split("/").pop(); }
 function extension(path) { return basename(path).split(".").pop().toLowerCase(); }
 function applyLanguage(file) {
-  const l=window.KirinCodeLanguages.resolve(file.path,file.override);
-  cm.setOption("mode",l.mime);
-  if (l.mode && CodeMirror.autoLoadMode) CodeMirror.autoLoadMode(cm,l.mode);
-  $("status-lang").textContent=l.name;
+  const language=window.KirinCodeLanguages.resolve(file.path,file.override);
+  const ticket=++languageLoadTicket;
+  const loader=window.KirinCodeModeLoader;
+  const ready=!language.mode || loader.installed(language.mode);
+  cm.setOption("mode",ready?language.mime:"text/plain");
+  $("status-lang").textContent=language.name+(ready?"":" (loading...)");
   $("language-select").value=file.override || "auto";
+  if (!ready) loader.load(language.mode).then(()=>{
+    if (ticket!==languageLoadTicket || !current || current.id!==file.id) return;
+    cm.setOption("mode",language.mime);
+    $("status-lang").textContent=language.name;
+    cm.refresh();
+  }).catch((error)=>{
+    if (ticket!==languageLoadTicket || !current || current.id!==file.id) return;
+    $("status-lang").textContent="Plain Text";
+    say("Language mode: "+error.message);
+  });
 }
 function isDirty(file) {return file.doc.getValue()!==file.saved;}
 function el(tag,cls,value) {

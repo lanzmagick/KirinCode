@@ -25,3 +25,4 @@ jobs:
           node scripts/check.mjs
           node scripts/test-sourcepawn.mjs
           node scripts/test-workbench.mjs
+          node scripts/test-languages.mjs

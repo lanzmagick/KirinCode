@@ -110,6 +110,15 @@
               <option value="go">Go</option>
               <option value="config">Configuration</option>
               <option value="valve">Valve KeyValues</option>
+              <option value="csharp">C#</option>
+              <option value="ruby">Ruby</option>
+              <option value="perl">Perl</option>
+              <option value="swift">Swift</option>
+              <option value="dart">Dart</option>
+              <option value="diff">Diff</option>
+              <option value="dockerfile">Dockerfile</option>
+              <option value="powershell">PowerShell</option>
+              <option value="toml">TOML</option>
             </select>
           </label>
           <span id="status-pos">Ln 1, Col 1</span>
@@ -177,14 +186,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <noscript>KirinCode memerlukan JavaScript untuk menjalankan editor.</noscript>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/meta.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/xml/xml.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/css/css.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/javascript/javascript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/htmlmixed/htmlmixed.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/clike/clike.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/properties/properties.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/mode/loadmode.min.js"></script>
+  <script src="languages/_shared/meta.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/edit/matchbrackets.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/edit/closebrackets.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/selection/active-line.min.js"></script>
@@ -196,6 +198,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="languages/valve-keyvalues.js"></script>
   <script src="languages/sourcepawn.js"></script>
+  <script src="languages/loader.js"></script>
   <script src="languages/catalog.js"></script>
   <script src="assets/js/workbench-core.js"></script>
   <script src="assets/js/app.js"></script>

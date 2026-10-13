@@ -12,6 +12,9 @@ const sourcePaths = [
   "assets/js/workbench-core.js",
   "assets/js/workbench.js",
   "languages/catalog.js",
+  "languages/loader.js",
+  "languages/_shared/meta.js",
+  "languages/_shared/simple.js",
   "languages/sourcepawn.js",
   "languages/valve-keyvalues.js"
 ];
@@ -32,7 +35,7 @@ for (const path of sourcePaths) {
 for (const path of [...sourcePaths, "assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/icons/icon.svg"]) {
   assert.ok(html.includes('"' + path + '"'), "Missing local path in HTML: " + path);
 }
-const dependencyOrder = ["languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/catalog.js", "assets/js/workbench-core.js", "assets/js/app.js", "assets/js/workbench.js", "assets/js/repo-explorer.js"];
+const dependencyOrder = ["languages/_shared/meta.js", "languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/loader.js", "languages/catalog.js", "assets/js/workbench-core.js", "assets/js/app.js", "assets/js/workbench.js", "assets/js/repo-explorer.js"];
 for (let i = 1; i < dependencyOrder.length; i++) {
   assert.ok(html.indexOf('src="' + dependencyOrder[i] + '"') > html.indexOf('src="' + dependencyOrder[i-1] + '"'), "Script order invalid");
 }

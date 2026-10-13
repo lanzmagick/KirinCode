@@ -4,10 +4,10 @@
 
 **Laman (selepas GitHub Pages diaktifkan):** https://lanzmagick.github.io/KirinCode/
 
-## Ciri versi 0.4
+## Ciri versi 0.5
 
 - **Code viewer dan editor:** syntax highlighting, nombor baris, code folding, bracket matching, auto-close brackets, word wrap, tab spacing dan tetapan saiz font.
-- **Pelbagai bahasa:** CodeMirror memuatkan mode mengikut extension secara automatik. HTML, CSS, JS, JSON, XML, Markdown, Python, C/C++, Java, PHP, SQL dan banyak lagi (bergantung pada mode yang tersedia).
+- **Pelbagai bahasa:** 23 mode CodeMirror sumber tempatan dengan loading mengikut keperluan; pilihan tambahan C#, Ruby, Perl, Swift, Dart, Dockerfile, Diff, PowerShell dan TOML. Sokongan Java/Kotlin/C/C++ melalui mode C-like serta JSON/TypeScript melalui JavaScript.
 - **Format Left 4 Dead 2 / SourceMod:** .sp dan .inc kini menggunakan tokenizer SourcePawn khusus: preprocessor, methodmap, enum struct, native, forward, string, komen berbilang baris dan beberapa API popular SourceMod. Format .cfg, .nut, .vdf, .vmt kekal disokong.
 - **Fallback Plain Text:** semua fail teks yang tidak dikenali boleh dibuka tanpa syntax highlighting.
 - **Multiple tabs:** buka/edit banyak fail, serta pengesanan perubahan belum disimpan.
@@ -31,12 +31,18 @@
 - Bahasa yang tiada mode CodeMirror dipaparkan sebagai teks biasa. SourcePawn menggunakan lexer khusus untuk warna kod, **bukan compiler, validator atau autocomplete semantik penuh**. Fungsi custom masih boleh dipaparkan sebagai fungsi biasa.
 - GitHub Explorer hanya membaca **repositori awam** pada **default branch**. GitHub API boleh menghadkan permintaan awam tanpa token, dan senarai repo yang terlalu besar mungkin dipotong.
 - Fungsi GitHub File asal masih untuk satu URL fail pada satu masa; nama branch yang mengandungi slash mungkin memerlukan URL raw yang tepat.
-- CodeMirror, JSZip dan mode bahasa dimuatkan melalui CDN; Internet diperlukan untuk editor penuh. CodeMirror 5 adalah pustaka lama; migrasi CodeMirror 6 boleh dipertimbangkan kemudian.
+- **Mode bahasa tidak lagi diambil dari CDN.** Fail CodeMirror 5.65.20 yang diperlukan disimpan dalam folder languages/ bersama lesen upstream. Enjin editor CodeMirror 5, tema, addon UI dan JSZip **masih menggunakan CDN**, jadi Internet masih diperlukan untuk memulakan editor penuh. Mode yang belum dibundel dipaparkan dalam Plain Text; CodeMirror 6 boleh dipertimbangkan kemudian.
 - Simpanan sesi bukan sandaran: **muat turun fail penting**. Data besar mungkin tidak masuk ke sessionStorage.
 - Live Preview HTML menyekat **JavaScript, borang, rangka bersarang, sambungan rangkaian JavaScript dan aset selain gambar HTTPS/data serta gaya inline**. Ini untuk keselamatan; bukan pelayar penuh atau laman web dinamik.
 - Preview Markdown menyokong tajuk, teks tebal/condong, pautan selamat, gambar HTTPS, senarai, checklist, jadual, petikan dan blok kod. Ia belum menyokong seluruh spesifikasi CommonMark/GFM.
 - Live Preview dihadkan kepada **200,000 aksara setiap fail** untuk mengelakkan pembekuan pelayar Android. Kod yang lebih besar masih boleh diedit tanpa preview.
 - Compare Code dihadkan kepada **1,200 baris setiap fail**; perbandingan baris sahaja, bukan diff perkataan atau Git commit.
+
+## Mode bahasa tempatan
+
+Pilih **Auto Detect** supaya extension fail memilih script tempatan secara automatik, atau tukar bahasa secara manual di status bar. Fail bahasa berada dalam subfolder `languages/` dan dimuat secara lazy-load; perubahan bahasa semasa fail masih dimuat tidak akan mengubah tab lain. XML, CSS dan JavaScript akan dimuat dahulu sebagai dependensi HTML; HTML dan C-like pula menjadi dependensi PHP. Rust dan Dockerfile menggunakan helper simple mode.
+
+**Nota lesen:** CodeMirror 5.65.20 adalah projek MIT berasingan; baca `languages/CODEMIRROR-LICENSE.md`. Mode bahasa lain yang belum tersedia akan kekal dalam Plain Text, tanpa mengambil skrip luar.
 
 ## Menggunakan mod SourcePawn
 
@@ -81,7 +87,7 @@ Tiada proses npm install, backend atau build diperlukan. index.html berada terus
 
 ## Struktur projek
 
-Semua kod berkaitan bahasa diletakkan dalam folder **languages/**. Fail pihak ketiga CodeMirror (core dan beberapa mode) masih dimuatkan melalui CDN; fail konfigurasi bahasa dan mode khas KirinCode disimpan dalam repo.
+Semua fail highlighting bahasa berada dalam folder **languages/** dan dimuat hanya apabila diperlukan. Fail sumber CodeMirror 5.65.20 dikekalkan dengan lesen MIT asal. CodeMirror core, gaya UI dan addon bukan-bahasa masih dimuatkan dari CDN.
 
 ```text
 KirinCode/
@@ -102,8 +108,13 @@ KirinCode/
 │       └── icon.svg
 ├── languages/
 │   ├── catalog.js
+│   ├── loader.js
 │   ├── sourcepawn.js
-│   └── valve-keyvalues.js
+│   ├── valve-keyvalues.js
+│   ├── _shared/ (meta.js, simple.js)
+│   ├── html/, css/, javascript/, php/, python/, ...
+│   ├── clike/, sql/, markdown/, yaml/, lua/, rust/, ...
+│   └── CODEMIRROR-LICENSE.md
 ├── scripts/
 │   ├── check.mjs
 │   ├── test-sourcepawn.mjs
@@ -119,7 +130,9 @@ KirinCode/
 - `assets/js/` — editor, GitHub Repo Explorer, Live Preview dan Compare Code
 - `assets/css/workbench.css` — panel preview/compare responsif
 - `assets/icons/` — favicon dan ikon
-- `languages/catalog.js` — pengesanan format, 24 pilihan bahasa dan rujukan CodeMirror
+- `languages/catalog.js` — pengesanan format dan 33 pilihan bahasa (termasuk Auto Detect dan Plain Text)
+- `languages/loader.js` — memuatkan mode dan dependensi dari folder tempatan; tiada URL CDN untuk highlighting
+- `languages/<mode>/` — salinan source CodeMirror 5.65.20 yang berkaitan
 - `languages/valve-keyvalues.js` — mode khas Valve VDF/VMT
 - `languages/sourcepawn.js` — lexer SourcePawn khusus untuk .sp dan .inc
 - `scripts/test-sourcepawn.mjs` — ujian token SourcePawn
@@ -137,6 +150,8 @@ KirinCode/
 - [x] Language picker manual setiap tab
 - [x] Syntax highlighting SourcePawn khusus (tokenizer, bukan compiler)
 - [ ] Custom SourceMod API token dictionary/import daripada fail .inc
+- [x] 23 mode bahasa tempatan dan loader dependensi berperingkat
+- [ ] Self-host CodeMirror core, addon editor dan JSZip untuk offline penuh
 - [x] Live Preview HTML/Markdown menggunakan iframe sandbox dan CSP terhad
 - [x] Compare Code dua tab dengan diff baris responsif
 - [ ] Live Preview Markdown berasaskan renderer lengkap CommonMark/GFM dan ujian pelayar automatik

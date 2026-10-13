@@ -3,7 +3,6 @@
 "use strict";
 if(!window.CodeMirror)throw new Error("CodeMirror is required");
 const CodeMirror=window.CodeMirror;
-CodeMirror.modeURL="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/%N/%N.min.js";
 function basename(path){return String(path||"untitled.txt").replace(/\\/g,"/").split("/").pop()||"untitled.txt";}
 function extension(path){return basename(path).split(".").pop().toLowerCase();}
 function lang(path) {
@@ -19,7 +18,10 @@ function lang(path) {
     const a=special[extension(path)]; return {name:a[0],mime:a[1],mode:a[2]};
   }
   const a = CodeMirror.findModeByFileName(basename(path)) || CodeMirror.findModeByExtension(extension(path));
-  return a ? {name:a.name,mime:a.mime,mode:a.mode} : {name:"Plain Text",mime:"text/plain",mode:null};
+  if (!a) return {name:"Plain Text",mime:"text/plain",mode:null};
+  if (a.mode && !window.KirinCodeModeLoader.has(a.mode) && !CodeMirror.modes[a.mode])
+    return {name:a.name+" (Plain Text)",mime:"text/plain",mode:null};
+  return {name:a.name,mime:a.mime,mode:a.mode};
 }
 const LANGUAGES = {
   auto:null,
@@ -45,7 +47,16 @@ const LANGUAGES = {
   rust:{name:"Rust",mime:"text/x-rustsrc",mode:"rust"},
   go:{name:"Go",mime:"text/x-go",mode:"go"},
   config:{name:"Config",mime:"text/x-properties",mode:"properties"},
-  valve:{name:"Valve KeyValues",mime:"valve-kv",mode:null}
+  valve:{name:"Valve KeyValues",mime:"valve-kv",mode:null},
+  csharp:{name:"C#",mime:"text/x-csharp",mode:"clike"},
+  ruby:{name:"Ruby",mime:"ruby",mode:"ruby"},
+  perl:{name:"Perl",mime:"perl",mode:"perl"},
+  swift:{name:"Swift",mime:"swift",mode:"swift"},
+  dart:{name:"Dart",mime:"dart",mode:"dart"},
+  diff:{name:"Diff",mime:"diff",mode:"diff"},
+  dockerfile:{name:"Dockerfile",mime:"dockerfile",mode:"dockerfile"},
+  powershell:{name:"PowerShell",mime:"powershell",mode:"powershell"},
+  toml:{name:"TOML",mime:"toml",mode:"toml"}
 };
 window.KirinCodeLanguages=Object.freeze({
   detect:lang,
