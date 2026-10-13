@@ -35,6 +35,7 @@
 - Simpanan sesi bukan sandaran: **muat turun fail penting**. Data besar mungkin tidak masuk ke sessionStorage.
 - Live Preview HTML menyekat **JavaScript, borang, rangka bersarang, sambungan rangkaian JavaScript dan aset selain gambar HTTPS/data serta gaya inline**. Ini untuk keselamatan; bukan pelayar penuh atau laman web dinamik.
 - Preview Markdown menyokong tajuk, teks tebal/condong, pautan selamat, gambar HTTPS, senarai, checklist, jadual, petikan dan blok kod. Ia belum menyokong seluruh spesifikasi CommonMark/GFM.
+- Live Preview dihadkan kepada **200,000 aksara setiap fail** untuk mengelakkan pembekuan pelayar Android. Kod yang lebih besar masih boleh diedit tanpa preview.
 - Compare Code dihadkan kepada **1,200 baris setiap fail**; perbandingan baris sahaja, bukan diff perkataan atau Git commit.
 
 ## Menggunakan mod SourcePawn
