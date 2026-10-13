@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldgutter.min.css">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/repo.css">
+  <link rel="stylesheet" href="assets/css/workbench.css">
 </head>
 <body>
   <div class="app">
@@ -47,6 +48,9 @@
           <div class="separator"></div>
           <button id="find-btn" title="Find (Ctrl+F)">⌕ <span class="desktop-label">Find</span></button>
           <button id="replace-toggle-btn" title="Replace (Ctrl+H)">⇄ <span class="desktop-label">Replace</span></button>
+          <div class="separator"></div>
+          <button id="preview-btn" title="Live HTML / Markdown preview" aria-pressed="false">◧ <span class="desktop-label">Preview</span></button>
+          <button id="compare-btn" title="Compare two open files">⇆ <span class="desktop-label">Compare</span></button>
           <div class="spacer"></div>
           <span class="shortcut">Ctrl+S · Ctrl+F · Ctrl+N</span>
         </div>
@@ -63,7 +67,19 @@
           <button id="replace-all-btn" class="hide">All</button>
           <button class="icon-btn" id="find-close" title="Close">✕</button>
         </div>
-        <div class="editor-wrap"><textarea id="code-input" aria-label="Code editor"></textarea></div>
+        <div class="editor-stage" id="editor-stage">
+          <div class="editor-wrap"><textarea id="code-input" aria-label="Code editor"></textarea></div>
+          <section class="preview-pane" id="preview-pane" hidden aria-label="Live preview">
+            <div class="preview-header">
+              <strong>Live Preview</strong>
+              <span class="preview-name" id="preview-file"></span>
+              <span class="preview-kind" id="preview-kind"></span>
+              <button id="preview-close" class="icon-btn" title="Close preview" aria-label="Close preview">✕</button>
+            </div>
+            <p class="preview-help" id="preview-help"></p>
+            <iframe id="preview-frame" class="preview-frame" sandbox="" referrerpolicy="no-referrer" title="Isolated live preview"></iframe>
+          </section>
+        </div>
         <footer class="statusbar">
           <span id="status-file">Tiada fail</span>
           <span class="push"></span><span id="status-count">0 files</span>
@@ -136,6 +152,28 @@
       <div id="repo-footer" class="repo-footer">Tanpa token atau akses penulisan ke GitHub.</div>
     </section>
   </div>
+  <div class="dialog-backdrop" id="compare-dialog" aria-hidden="true">
+    <section class="dialog compare-dialog" role="dialog" aria-modal="true" aria-labelledby="compare-title">
+      <header class="compare-titlebar">
+        <div>
+          <h2 id="compare-title">Compare Code</h2>
+          <p>Bandingkan kod dua tab yang sedang dibuka</p>
+        </div>
+        <button id="compare-close" class="icon-btn" title="Close comparison" aria-label="Close comparison">✕</button>
+      </header>
+      <div class="compare-selectorbar">
+        <label>Original file
+          <select id="compare-left" aria-label="Original file"></select>
+        </label>
+        <button id="compare-swap" type="button" title="Swap files" aria-label="Swap compared files">⇄</button>
+        <label>Updated file
+          <select id="compare-right" aria-label="Updated file"></select>
+        </label>
+      </div>
+      <div id="compare-stats" class="compare-stats" role="status" aria-live="polite">Pilih dua fail.</div>
+      <div id="compare-results" class="compare-results" aria-label="Line comparison"></div>
+    </section>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <noscript>KirinCode memerlukan JavaScript untuk menjalankan editor.</noscript>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.js"></script>
@@ -159,7 +197,9 @@
   <script src="languages/valve-keyvalues.js"></script>
   <script src="languages/sourcepawn.js"></script>
   <script src="languages/catalog.js"></script>
+  <script src="assets/js/workbench-core.js"></script>
   <script src="assets/js/app.js"></script>
+  <script src="assets/js/workbench.js"></script>
   <script src="assets/js/repo-explorer.js"></script>
 </body>
 </html>
