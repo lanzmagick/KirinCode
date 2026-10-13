@@ -4,7 +4,7 @@
 
 **Laman (selepas GitHub Pages diaktifkan):** https://lanzmagick.github.io/KirinCode/
 
-## Ciri versi 0.3
+## Ciri versi 0.4
 
 - **Code viewer dan editor:** syntax highlighting, nombor baris, code folding, bracket matching, auto-close brackets, word wrap, tab spacing dan tetapan saiz font.
 - **Pelbagai bahasa:** CodeMirror memuatkan mode mengikut extension secara automatik. HTML, CSS, JS, JSON, XML, Markdown, Python, C/C++, Java, PHP, SQL dan banyak lagi (bergantung pada mode yang tersedia).
@@ -17,6 +17,8 @@
 - **GitHub File:** baca fail awam menggunakan pautan fail github.com atau raw.githubusercontent.com.
 - **GitHub Repository Explorer:** masukkan owner/repo atau URL repo awam, buka folder, cari fail dan buka kod daripada GitHub terus ke tab tempatan (tanpa token).
 - **Manual language selector:** pilih salah satu daripada 24 mod (termasuk Auto Detect), berguna apabila extension tidak dikenali; pilihan disimpan bagi sesi tab.
+- **Live Preview:** paparan HTML dan Markdown sambil menaip. Desktop memaparkan editor dan preview sebelah-menyebelah; telefon menggunakan panel preview. HTML dijalankan dalam iframe sandbox tanpa JavaScript.
+- **Compare Code:** bandingkan dua tab terbuka, paparkan nombor baris dan perbezaan yang ditambah, dipadam atau diubah.
 - **Responsif:** sidebar mudah alih, tema dark/light dan kawalan untuk Android atau desktop.
 - **Pemulihan sesi:** draf kecil disimpan dalam sessionStorage untuk tab pelayar yang sama; tetapan UI menggunakan localStorage.
 
@@ -31,10 +33,18 @@
 - Fungsi GitHub File asal masih untuk satu URL fail pada satu masa; nama branch yang mengandungi slash mungkin memerlukan URL raw yang tepat.
 - CodeMirror, JSZip dan mode bahasa dimuatkan melalui CDN; Internet diperlukan untuk editor penuh. CodeMirror 5 adalah pustaka lama; migrasi CodeMirror 6 boleh dipertimbangkan kemudian.
 - Simpanan sesi bukan sandaran: **muat turun fail penting**. Data besar mungkin tidak masuk ke sessionStorage.
+- Live Preview HTML menyekat **JavaScript, borang, rangka bersarang, sambungan rangkaian JavaScript dan aset selain gambar HTTPS/data serta gaya inline**. Ini untuk keselamatan; bukan pelayar penuh atau laman web dinamik.
+- Preview Markdown menyokong tajuk, teks tebal/condong, pautan selamat, gambar HTTPS, senarai, checklist, jadual, petikan dan blok kod. Ia belum menyokong seluruh spesifikasi CommonMark/GFM.
+- Compare Code dihadkan kepada **1,200 baris setiap fail**; perbandingan baris sahaja, bukan diff perkataan atau Git commit.
 
 ## Menggunakan mod SourcePawn
 
 Buka fail `.sp` atau `.inc` dan syntax highlighting akan dikesan secara automatik. Untuk fail tanpa extension, pilih **SourcePawn** daripada senarai bahasa di status bar. Sokongan warna meliputi kedua-dua sintaks lama dan newdecls. Pengesanan ralat compile belum disokong.
+
+## Cara guna Live Preview dan Compare Code
+
+- **Live Preview:** buka fail HTML (.html/.htm) atau Markdown (.md/.markdown), kemudian tekan **Preview**. Panel akan dikemas kini selepas perubahan kod; tekan ✕ untuk tutup. HTML dinyahaktifkan skripnya dalam iframe sandbox.
+- **Compare Code:** buka sekurang-kurangnya dua fail dalam tab KirinCode, tekan **Compare**, pilih fail kiri dan kanan. Baris merah menunjukkan kod dibuang, hijau menunjukkan kod baharu dan kombinasi merah/hijau menunjukkan baris yang diubah. Bandingan auto-update selepas edit.
 
 ## Cara guna GitHub Repo Explorer
 
@@ -79,10 +89,13 @@ KirinCode/
 ├── assets/
 │   ├── css/
 │   │   ├── style.css
-│   │   └── repo.css
+│   │   ├── repo.css
+│   │   └── workbench.css
 │   ├── js/
 │   │   ├── app.js
-│   │   └── repo-explorer.js
+│   │   ├── repo-explorer.js
+│   │   ├── workbench-core.js
+│   │   └── workbench.js
 │   └── icons/
 │       └── icon.svg
 ├── languages/
@@ -91,7 +104,8 @@ KirinCode/
 │   └── valve-keyvalues.js
 ├── scripts/
 │   ├── check.mjs
-│   └── test-sourcepawn.mjs
+│   ├── test-sourcepawn.mjs
+│   └── test-workbench.mjs
 └── .github/
     └── workflows/
         └── validate.yml
@@ -100,12 +114,14 @@ KirinCode/
 
 - `index.html` — titik masuk GitHub Pages
 - `assets/css/` — tema utama dan gaya Repo Explorer
-- `assets/js/` — editor dan GitHub Repo Explorer
+- `assets/js/` — editor, GitHub Repo Explorer, Live Preview dan Compare Code
+- `assets/css/workbench.css` — panel preview/compare responsif
 - `assets/icons/` — favicon dan ikon
 - `languages/catalog.js` — pengesanan format, 24 pilihan bahasa dan rujukan CodeMirror
 - `languages/valve-keyvalues.js` — mode khas Valve VDF/VMT
 - `languages/sourcepawn.js` — lexer SourcePawn khusus untuk .sp dan .inc
 - `scripts/test-sourcepawn.mjs` — ujian token SourcePawn
+- `scripts/test-workbench.mjs` — ujian Markdown, iframe CSP, diff dan sambungan UI
 - `scripts/check.mjs` — pemeriksaan sintaks, laluan fail dan UI
 - .github/workflows/validate.yml — semakan automatik semasa push/PR
 
@@ -119,7 +135,9 @@ KirinCode/
 - [x] Language picker manual setiap tab
 - [x] Syntax highlighting SourcePawn khusus (tokenizer, bukan compiler)
 - [ ] Custom SourceMod API token dictionary/import daripada fail .inc
-- [ ] Markdown/HTML preview yang selamat
+- [x] Live Preview HTML/Markdown menggunakan iframe sandbox dan CSP terhad
+- [x] Compare Code dua tab dengan diff baris responsif
+- [ ] Live Preview Markdown berasaskan renderer lengkap CommonMark/GFM dan ujian pelayar automatik
 - [ ] Offline PWA dan pilihan backup draf
 - [ ] Penambahbaikan aksesibiliti, ujian E2E dan penskalaan fail besar
 
