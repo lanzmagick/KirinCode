@@ -31,7 +31,7 @@ const rule=s=>/^ {0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/.test(s);
 const quote=s=>/^ {0,3}>/.test(s);
 const tableDivider=s=>/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(s);
 const cells=s=>s.trim().replace(/^\||\|$/g,"").split("|").map(t=>t.trim());
-function markdown(source) {
+function markdown(source,depth=0) {
  const lines=String(source).replace(/\r\n?/g,"\n").split("\n");
  let i=0;const result=[];
  const block=s=>!s.trim()||/^ {0,3}(\x60{3,}|~{3,})/.test(s)||listMatch(s)||heading(s)||rule(s)||quote(s);
@@ -53,7 +53,7 @@ function markdown(source) {
   if(rule(line)){result.push("<hr>");i++;continue;}
   if(quote(line)){
     const items=[];while(i<lines.length&&quote(lines[i]))items.push(lines[i++].replace(/^ {0,3}>\s?/,""));
-    result.push("<blockquote>"+markdown(items.join("\n"))+"</blockquote>");continue;
+    result.push("<blockquote>"+(depth>=8?"<p>"+inline(items.join(" "))+"</p>":markdown(items.join("\n"),depth+1))+"</blockquote>");continue;
   }
   if(listMatch(line)){
     const ordered=/^\d/.test(listMatch(line)[1]),tag=ordered?"ol":"ul",items=[];
