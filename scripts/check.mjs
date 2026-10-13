@@ -10,6 +10,7 @@ const sourcePaths = [
   "assets/js/app.js",
   "assets/js/repo-explorer.js",
   "languages/catalog.js",
+  "languages/sourcepawn.js",
   "languages/valve-keyvalues.js"
 ];
 for (const path of sourcePaths) {
@@ -29,7 +30,7 @@ for (const path of sourcePaths) {
 for (const path of [...sourcePaths, "assets/css/style.css", "assets/css/repo.css", "assets/icons/icon.svg"]) {
   assert.ok(html.includes('"' + path + '"'), "Missing local path in HTML: " + path);
 }
-const dependencyOrder = ["languages/valve-keyvalues.js", "languages/catalog.js", "assets/js/app.js", "assets/js/repo-explorer.js"];
+const dependencyOrder = ["languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/catalog.js", "assets/js/app.js", "assets/js/repo-explorer.js"];
 for (let i = 1; i < dependencyOrder.length; i++) {
   assert.ok(html.indexOf('src="' + dependencyOrder[i] + '"') > html.indexOf('src="' + dependencyOrder[i-1] + '"'), "Script order invalid");
 }
