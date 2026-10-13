@@ -21,6 +21,10 @@ assert.doesNotMatch(core.renderMarkdown("[bad](javascript:alert(1))"), /href="ja
 assert.doesNotMatch(core.renderMarkdown("<script>alert(1)</script>"), /<script>/i);
 assert.doesNotMatch(core.renderMarkdown("![bad](javascript:alert(1))"), /<img/);
 
+// Deep blockquotes must not overflow the browser stack.
+assert.ok(core.renderMarkdown(">".repeat(3000) + " hi").length > 0);
+assert.match(readFileSync("assets/js/workbench.js", "utf8"), /200000/);
+
 const htmlDoc = core.documentFor("<html><head></head><body><script>BAD()</script></body></html>", "html");
 const mdDoc = core.documentFor(sample, "markdown");
 for (const html of [htmlDoc, mdDoc]) {
