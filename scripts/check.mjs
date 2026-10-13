@@ -9,6 +9,8 @@ const html = get("index.html");
 const sourcePaths = [
   "assets/js/app.js",
   "assets/js/repo-explorer.js",
+  "assets/js/workbench-core.js",
+  "assets/js/workbench.js",
   "languages/catalog.js",
   "languages/sourcepawn.js",
   "languages/valve-keyvalues.js"
@@ -16,7 +18,7 @@ const sourcePaths = [
 for (const path of sourcePaths) {
   assert.doesNotThrow(() => new Function(get(path)), "Invalid JavaScript syntax in " + path);
 }
-for (const path of ["assets/css/style.css", "assets/css/repo.css", "assets/icons/icon.svg"]) get(path);
+for (const path of ["assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/icons/icon.svg"]) get(path);
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 assert.equal(ids.length, new Set(ids).size, "Duplicate HTML IDs");
@@ -27,10 +29,10 @@ for (const path of sourcePaths) {
   }
 }
 
-for (const path of [...sourcePaths, "assets/css/style.css", "assets/css/repo.css", "assets/icons/icon.svg"]) {
+for (const path of [...sourcePaths, "assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/icons/icon.svg"]) {
   assert.ok(html.includes('"' + path + '"'), "Missing local path in HTML: " + path);
 }
-const dependencyOrder = ["languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/catalog.js", "assets/js/app.js", "assets/js/repo-explorer.js"];
+const dependencyOrder = ["languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/catalog.js", "assets/js/workbench-core.js", "assets/js/app.js", "assets/js/workbench.js", "assets/js/repo-explorer.js"];
 for (let i = 1; i < dependencyOrder.length; i++) {
   assert.ok(html.indexOf('src="' + dependencyOrder[i] + '"') > html.indexOf('src="' + dependencyOrder[i-1] + '"'), "Script order invalid");
 }
