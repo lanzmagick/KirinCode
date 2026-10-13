@@ -1,0 +1,402 @@
+/* KirinCode: all editing happens locally in the browser. */
+(function () {
+"use strict";
+const $ = (id) => document.getElementById(id);
+const CM_URL = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20";
+const FILE_MAX = 4 * 1024 * 1024;
+const ZIP_MAX = 15 * 1024 * 1024;
+const tabs = [];
+let current = null, seq = 0, quiet = false, toastTimeout, autosaveTimeout, dragLevel = 0;
+let config = {theme:"dark",wrap:false,font:14,tab:2};
+try { Object.assign(config, JSON.parse(localStorage.getItem("kirincode-settings-v1") || "{}")); } catch(e) {}
+function say(message) {
+  $("toast").textContent = message;
+  $("toast").classList.add("show");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => $("toast").classList.remove("show"), 3500);
+}
+if (!window.CodeMirror) {
+  say("CodeMirror gagal dimuat; semak sambungan internet.");
+  return;
+}
+CodeMirror.modeURL = CM_URL + "/mode/%N/%N.min.js";
+CodeMirror.defineMode("valve-kv", function () {
+  return {token:function(stream) {
+    if (stream.eatSpace()) return null;
+    if (stream.match(/^\/\/.*/)) return "comment";
+    if (stream.match(/^#.*/)) return "meta";
+    if (stream.match(/^"(?:[^"\\]|\\.)*"/)) return "string";
+    if (stream.match(/^-?\d+(\.\d+)?/)) return "number";
+    if (stream.match(/^[{}]/)) return "bracket";
+    stream.next(); return null;
+  }};
+});
+const cm = CodeMirror.fromTextArea($("code-input"), {
+  mode:"text/plain", theme:"material-darker", lineNumbers:true,
+  styleActiveLine:true, matchBrackets:true, autoCloseBrackets:true,
+  foldGutter:true, gutters:["CodeMirror-linenumbers","CodeMirror-foldgutter"],
+  indentUnit:2, tabSize:2, lineWrapping:false,
+  extraKeys:{
+    "Ctrl-S":downloadCurrent,"Cmd-S":downloadCurrent,
+    "Ctrl-Shift-S":downloadZip,"Cmd-Shift-S":downloadZip,
+    "Ctrl-N":makeNew,"Cmd-N":makeNew,
+    "Ctrl-O":chooseFiles,"Cmd-O":chooseFiles,
+    "Ctrl-F":()=>showFind(true,false),"Cmd-F":()=>showFind(true,false),
+    "Ctrl-H":()=>showFind(true,true),
+    "Ctrl-W":()=>{if(current) closeTab(current.id);},
+    "Ctrl-Tab":()=>switchNext(1),"Ctrl-Shift-Tab":()=>switchNext(-1)
+  }
+});
+const editorElement = document.querySelector(".CodeMirror");
+function normPath(path) {
+  return String(path || "untitled.txt").replace(/\\/g,"/").split("/").filter(p=>p && p!=="." && p!=="..").join("/").slice(0,240) || "untitled.txt";
+}
+function basename(path) { return normPath(path).split("/").pop(); }
+function extension(path) { return basename(path).split(".").pop().toLowerCase(); }
+function lang(path) {
+  const special = {
+    sp:["SourcePawn","text/x-csrc","clike"], inc:["SourcePawn","text/x-csrc","clike"],
+    cfg:["Config","text/x-properties","properties"],
+    vdf:["Valve VDF","valve-kv",null],vmt:["Valve VMT","valve-kv",null],
+    nut:["Squirrel","text/javascript","javascript"],
+    smali:["Smali (text)","text/plain",null],
+    log:["Log","text/plain",null]
+  };
+  if (special[extension(path)]) {
+    const a=special[extension(path)]; return {name:a[0],mime:a[1],mode:a[2]};
+  }
+  const a = CodeMirror.findModeByFileName(basename(path)) || CodeMirror.findModeByExtension(extension(path));
+  return a ? {name:a.name,mime:a.mime,mode:a.mode} : {name:"Plain Text",mime:"text/plain",mode:null};
+}
+function applyLanguage(file) {
+  const l=lang(file.path);
+  cm.setOption("mode",l.mime);
+  if (l.mode && CodeMirror.autoLoadMode) CodeMirror.autoLoadMode(cm,l.mode);
+  $("status-lang").textContent=l.name;
+}
+function isDirty(file) {return file.doc.getValue()!==file.saved;}
+function el(tag,cls,value) {
+  const n=document.createElement(tag);
+  if(cls)n.className=cls;
+  if(value!==undefined)n.textContent=value;
+  return n;
+}
+function render() {
+  const strip=$("tabs"), list=$("file-list");
+  strip.replaceChildren();list.replaceChildren();
+  const filter=$("search-files").value.toLowerCase().trim();
+  let matches=0;
+  for(const file of tabs) {
+    const selected=!!current && file.id===current.id;
+    const tab=el("button","tab"+(selected?" active":""));
+    tab.type="button";tab.title=file.path;tab.setAttribute("role","tab");
+    tab.setAttribute("aria-selected",String(selected));
+    tab.append(el("span","tab-title",file.name));
+    if(isDirty(file))tab.append(el("span","dirty-dot"));
+    const close=el("span","tab-close","×");
+    close.title="Tutup "+file.name;
+    close.addEventListener("click",e=>{e.stopPropagation();closeTab(file.id);});
+    tab.append(close);
+    tab.addEventListener("click",()=>activate(file.id));strip.append(tab);
+    if(!file.path.toLowerCase().includes(filter))continue;
+    matches++;
+    const item=el("button","file-item"+(selected?" active":""));
+    item.type="button";item.title=file.path;
+    item.append(el("span","file-mark",extension(file.name).slice(0,4)));
+    const description=el("span");
+    description.style.flex="1";description.style.minWidth="0";
+    description.append(el("span","file-name",file.name),el("span","file-path",file.path));
+    item.append(description);
+    if(isDirty(file))item.append(el("span","file-dot","●"));
+    item.addEventListener("click",()=>activate(file.id));
+    list.append(item);
+  }
+  if(!matches)list.append(el("div","empty-state",tabs.length?"Tiada fail ditemui.":"Buka fail atau cipta fail baharu."));
+  $("status-count").textContent=tabs.length+" files";
+  $("save-btn").disabled=!current;
+  $("zip-btn").disabled=tabs.length===0;
+}
+function position() {
+  const p=cm.getCursor();
+  $("status-pos").textContent="Ln "+(p.line+1)+", Col "+(p.ch+1);
+  $("status-length").textContent=cm.getValue().length.toLocaleString()+" aksara";
+  $("status-file").textContent=current?current.path:"Tiada fail";
+}
+function saveSession() {
+  if(quiet)return;
+  clearTimeout(autosaveTimeout);
+  autosaveTimeout=setTimeout(()=>{
+    try {
+      const data={active:current?current.id:null,files:tabs.filter(f=>f.doc.getValue().length<=350000).slice(0,16).map(f=>({id:f.id,path:f.path,content:f.doc.getValue(),saved:f.saved}))};
+      const serialized=JSON.stringify(data);
+      if(serialized.length<1400000)sessionStorage.setItem("kirincode-session-v1",serialized);
+    }catch(e){}
+  },650);
+}
+function activate(id) {
+  const file=tabs.find(f=>f.id===id);
+  if(!file||current&&current.id===id)return;
+  current=file;
+  cm.swapDoc(file.doc);cm.setOption("readOnly",false);
+  applyLanguage(file);render();position();hideSidebar();
+  requestAnimationFrame(()=>cm.refresh());
+}
+function add(path,content,selected=true,saved) {
+  path=normPath(path);
+  const file={id:++seq,path:path,name:basename(path),doc:new CodeMirror.Doc(String(content),"text/plain"),saved:saved===undefined?String(content):String(saved)};
+  tabs.push(file);
+  if(selected)activate(file.id);else render();
+  saveSession();return file;
+}
+function closeTab(id) {
+  const i=tabs.findIndex(f=>f.id===id);
+  if(i<0)return;
+  if(isDirty(tabs[i])&&!confirm("Perubahan "+tabs[i].name+" belum dimuat turun. Tutup juga?"))return;
+  tabs.splice(i,1);
+  if(current&&current.id===id) {
+    current=null;
+    if(tabs.length)activate(tabs[Math.max(0,i-1)].id);
+    else {
+      cm.swapDoc(new CodeMirror.Doc("","text/plain"));
+      cm.setOption("readOnly",true);
+      $("status-lang").textContent="Plain Text";
+    }
+  }
+  render();position();saveSession();
+}
+function switchNext(offset) {
+  if(!current||tabs.length<2)return;
+  const index=tabs.findIndex(t=>t.id===current.id);
+  activate(tabs[(index+offset+tabs.length)%tabs.length].id);
+}
+function makeNew() {
+  const name=prompt("Nama fail baharu:","untitled.txt");
+  if(name===null)return;
+  add(name.trim(),"");cm.focus();
+}
+function chooseFiles() {$("file-input").click();}
+function download(blob,name) {
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function downloadCurrent() {
+  if(!current)return;
+  const value=current.doc.getValue();
+  download(new Blob([value],{type:"text/plain;charset=utf-8"}),current.name);
+  current.saved=value;render();saveSession();say("Fail dimuat turun: "+current.name);
+}
+async function downloadZip() {
+  if(!tabs.length)return;
+  if(!window.JSZip){say("JSZip tidak dapat dimuat.");return;}
+  const zip=new JSZip(),seen=new Set();
+  for(const file of tabs) {
+    let path=normPath(file.path);
+    if(seen.has(path))path=file.id+"-"+basename(path);
+    seen.add(path);zip.file(path,file.doc.getValue());
+  }
+  try {
+    download(await zip.generateAsync({type:"blob",compression:"DEFLATE"}),"KirinCode-files.zip");
+    say("ZIP mengandungi "+tabs.length+" fail.");
+  }catch(e){say("Gagal eksport ZIP: "+e.message);}
+}
+function decode(bytes) {
+  if(bytes.length>1&&bytes[0]===255&&bytes[1]===254)return new TextDecoder("utf-16le").decode(bytes);
+  if(bytes.length>1&&bytes[0]===254&&bytes[1]===255)return new TextDecoder("utf-16be").decode(bytes);
+  if(bytes.subarray(0,512).includes(0))return null;
+  return new TextDecoder("utf-8").decode(bytes);
+}
+async function openZip(file) {
+  if(!window.JSZip){say("JSZip tidak dapat dimuat.");return;}
+  if(file.size>ZIP_MAX){say("Had ZIP 15 MB.");return;}
+  try {
+    const archive=await JSZip.loadAsync(file);
+    const entries=Object.values(archive.files).filter(e=>!e.dir);
+    if(entries.length>120){say("ZIP melebihi 120 fail.");return;}
+    let opened=0,skipped=0,total=0;
+    for(const entry of entries) {
+      const size=entry._data&&entry._data.uncompressedSize;
+      if(typeof size!=="number"||size>FILE_MAX||total+size>ZIP_MAX){skipped++;continue;}
+      total+=size;
+      const bytes=await entry.async("uint8array");
+      if(bytes.length>FILE_MAX){skipped++;continue;}
+      const contents=decode(bytes);
+      if(contents===null){skipped++;continue;}
+      add(entry.name,contents,false);opened++;
+    }
+    if(opened)activate(tabs[tabs.length-1].id);
+    say("ZIP: "+opened+" fail dibuka; "+skipped+" dilangkau.");
+  }catch(e){say("ZIP rosak/tidak disokong: "+e.message);}
+}
+async function openFiles(fileList) {
+  const inputs=Array.from(fileList||[]);
+  for(const file of inputs) {
+    try {
+      if(file.name.toLowerCase().endsWith(".zip")){await openZip(file);continue;}
+      if(file.size>FILE_MAX){say(file.name+" melebihi 4 MB.");continue;}
+      const text=decode(new Uint8Array(await file.arrayBuffer()));
+      if(text===null){say(file.name+" adalah binari.");continue;}
+      add(file.webkitRelativePath||file.name,text);
+    }catch(e){say("Ralat membaca "+file.name+": "+e.message);}
+  }
+}
+function escapePattern(s) {
+  return s.replace(/[-/\\^$*+?.()|[\]{}]/g,"\\$&");
+}
+function searchRegex(global) {
+  const term=$("find-input").value;
+  return new RegExp($("find-regex").checked?term:escapePattern(term),(global?"g":"")+($("find-case").checked?"":"i"));
+}
+function updateMatches() {
+  const term=$("find-input").value,contents=cm.getValue();
+  if(!term){$("match-count").textContent="0 padanan";return;}
+  try {
+    const re=searchRegex(true);
+    let count=0,result;
+    while((result=re.exec(contents))!==null && count<10000){
+      count++;
+      if(!result[0])re.lastIndex++;
+    }
+    $("match-count").textContent=count+(count>=10000?"+":"")+" padanan";
+  }catch(e){$("match-count").textContent="Regex tidak sah";}
+}
+function findNext(backwards) {
+  if(!$("find-input").value)return;
+  try {
+    const pattern=$("find-regex").checked?searchRegex(false):$("find-input").value;
+    const search=(at)=>cm.getSearchCursor(pattern,at,!$("find-case").checked);
+    let cursor=search(cm.getCursor(backwards?"from":"to"));
+    let found=backwards?cursor.findPrevious():cursor.findNext();
+    if(!found){
+      const last=cm.lastLine();
+      cursor=search(backwards?{line:last,ch:cm.getLine(last).length}:{line:0,ch:0});
+      found=backwards?cursor.findPrevious():cursor.findNext();
+    }
+    if(found){cm.setSelection(cursor.from(),cursor.to());cm.scrollIntoView(cursor.from(),100);cm.focus();}
+    else say("Teks tidak ditemui.");
+  }catch(e){say("Regex tidak sah.");}
+}
+function replaceOne() {
+  const term=$("find-input").value;
+  if(!term)return;
+  try {
+    const regex=new RegExp("^(?:"+($("find-regex").checked?term:escapePattern(term))+")$",$("find-case").checked?"":"i");
+    if(cm.getSelection()&&regex.test(cm.getSelection()))cm.replaceSelection($("replace-input").value);
+    findNext(false);
+  }catch(e){say("Regex tidak sah.");}
+}
+function replaceAll() {
+  if(!$("find-input").value)return;
+  try {
+    const regex=searchRegex(true),value=cm.getValue();
+    let count=0;
+    const result=value.replace(regex,()=>{count++;return $("replace-input").value;});
+    if(count)cm.setValue(result);
+    say(count+" padanan diganti.");
+  }catch(e){say("Regex tidak sah.");}
+}
+function showFind(visible,replace=false) {
+  $("findbar").classList.toggle("visible",visible);
+  for(const name of ["replace-input","replace-btn","replace-all-btn"])$(name).classList.toggle("hide",!replace);
+  if(visible){$("find-input").focus();$("find-input").select();updateMatches();}
+  else cm.focus();
+}
+function applyConfig() {
+  config.theme=config.theme==="light"?"light":"dark";
+  config.font=Math.max(11,Math.min(24,Number(config.font)||14));
+  config.tab=[2,4,8].includes(Number(config.tab))?Number(config.tab):2;
+  document.documentElement.dataset.theme=config.theme;
+  cm.setOption("theme",config.theme==="light"?"eclipse":"material-darker");
+  cm.setOption("lineWrapping",!!config.wrap);
+  cm.setOption("tabSize",config.tab);cm.setOption("indentUnit",config.tab);
+  editorElement.style.fontSize=config.font+"px";
+  $("theme-select").value=config.theme;
+  $("wrap-select").value=String(!!config.wrap);
+  $("tab-select").value=String(config.tab);
+  $("font-input").value=config.font;
+  try{localStorage.setItem("kirincode-settings-v1",JSON.stringify(config));}catch(e){}
+  cm.refresh();
+}
+function settingsVisible(open) {
+  $("settings-dialog").classList.toggle("visible",open);
+  $("settings-dialog").setAttribute("aria-hidden",String(!open));
+  if(!open)cm.focus();
+}
+function showSidebar() {$("sidebar").classList.add("open");$("sidebar-scrim").classList.add("visible");}
+function hideSidebar() {$("sidebar").classList.remove("open");$("sidebar-scrim").classList.remove("visible");}
+async function githubFile() {
+  const entered=prompt("URL fail awam GitHub (contoh github.com/user/repo/blob/main/file.js):");
+  if(!entered)return;
+  try {
+    const u=new URL(entered.trim());
+    if(u.protocol!=="https:")throw Error("HTTPS sahaja.");
+    let raw,path;
+    if(u.hostname==="github.com") {
+      const found=u.pathname.match(/^\/([^/]+)\/([^/]+)\/(?:blob|raw)\/([^/]+)\/(.+)$/);
+      if(!found)throw Error("Masukkan pautan FAIL GitHub, bukan repo/folder.");
+      raw="https://raw.githubusercontent.com/"+found[1]+"/"+found[2]+"/"+found[3]+"/"+found[4];
+      path=found[4];
+    } else if(u.hostname==="raw.githubusercontent.com") {
+      raw=u.href;path=u.pathname.split("/").slice(4).join("/");
+    } else throw Error("Domain GitHub tidak dikenali.");
+    const response=await fetch(raw);
+    if(!response.ok)throw Error("HTTP "+response.status);
+    if(Number(response.headers.get("content-length")||0)>FILE_MAX)throw Error("Fail terlalu besar.");
+    const bytes=new Uint8Array(await response.arrayBuffer());
+    if(bytes.length>FILE_MAX)throw Error("Fail terlalu besar.");
+    const result=decode(bytes);
+    if(result===null)throw Error("Fail binari.");
+    add(path,result);say("Kod GitHub berjaya dibuka.");
+  }catch(e){say("GitHub: "+e.message);}
+}
+function restoreSession() {
+  try {
+    const saved=JSON.parse(sessionStorage.getItem("kirincode-session-v1")||"null");
+    if(!saved||!Array.isArray(saved.files)||!saved.files.length)return false;
+    quiet=true;
+    let target=null;
+    for(const f of saved.files.slice(0,16)) {
+      if(!f||typeof f.path!=="string"||typeof f.content!=="string")continue;
+      const obj=add(f.path,f.content,false,typeof f.saved==="string"?f.saved:f.content);
+      if(f.id===saved.active)target=obj;
+    }
+    if(tabs.length)activate((target||tabs[0]).id);
+    return !!tabs.length;
+  }catch(e){return false;}finally{quiet=false;}
+}
+$("new-btn").onclick=makeNew;$("new-side-btn").onclick=makeNew;
+$("open-btn").onclick=chooseFiles;$("open-side-btn").onclick=chooseFiles;
+$("save-btn").onclick=downloadCurrent;$("zip-btn").onclick=downloadZip;
+$("folder-btn").onclick=()=>$("folder-input").click();
+$("github-btn").onclick=githubFile;
+$("file-input").onchange=e=>{openFiles(e.target.files);e.target.value="";};
+$("folder-input").onchange=e=>{openFiles(e.target.files);e.target.value="";};
+$("search-files").oninput=render;
+$("find-btn").onclick=()=>showFind(true,false);
+$("replace-toggle-btn").onclick=()=>showFind(true,true);
+$("find-close").onclick=()=>showFind(false);
+$("find-prev").onclick=()=>findNext(true);$("find-next").onclick=()=>findNext(false);
+$("replace-btn").onclick=replaceOne;$("replace-all-btn").onclick=replaceAll;
+for(const name of ["find-input","find-case","find-regex"])$(name).addEventListener("input",updateMatches);
+$("find-input").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();findNext(e.shiftKey);}if(e.key==="Escape")showFind(false);};
+$("settings-btn").onclick=()=>settingsVisible(true);
+$("settings-close").onclick=()=>settingsVisible(false);
+$("settings-dialog").onclick=e=>{if(e.target===$("settings-dialog"))settingsVisible(false);};
+$("theme-select").onchange=e=>{config.theme=e.target.value;applyConfig();};
+$("wrap-select").onchange=e=>{config.wrap=e.target.value==="true";applyConfig();};
+$("font-input").onchange=e=>{config.font=e.target.value;applyConfig();};
+$("tab-select").onchange=e=>{config.tab=e.target.value;applyConfig();};
+$("menu-btn").onclick=showSidebar;
+$("sidebar-close").onclick=hideSidebar;$("sidebar-scrim").onclick=hideSidebar;
+window.addEventListener("keydown",e=>{if(e.key==="Escape"){hideSidebar();settingsVisible(false);showFind(false);}});
+const workspace=$("workspace");
+workspace.addEventListener("dragenter",e=>{e.preventDefault();dragLevel++;$("drop-overlay").classList.add("visible");});
+workspace.addEventListener("dragover",e=>e.preventDefault());
+workspace.addEventListener("dragleave",e=>{e.preventDefault();dragLevel=Math.max(0,dragLevel-1);if(!dragLevel)$("drop-overlay").classList.remove("visible");});
+workspace.addEventListener("drop",e=>{e.preventDefault();dragLevel=0;$("drop-overlay").classList.remove("visible");if(e.dataTransfer)openFiles(e.dataTransfer.files);});
+cm.on("cursorActivity",position);
+cm.on("change",()=>{if(current){render();position();updateMatches();saveSession();}});
+applyConfig();
+if(!restoreSession())add("welcome.sp","// KirinCode — Multi-Language Code Editor\n// Buka fail dari peranti, ZIP atau pautan GitHub.\n\n#include <sourcemod>\n\npublic void OnPluginStart()\n{\n    PrintToServer(\"Hello from KirinCode!\");\n}\n");
+render();position();
+})();
