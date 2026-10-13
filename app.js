@@ -68,11 +68,38 @@ function lang(path) {
   const a = CodeMirror.findModeByFileName(basename(path)) || CodeMirror.findModeByExtension(extension(path));
   return a ? {name:a.name,mime:a.mime,mode:a.mode} : {name:"Plain Text",mime:"text/plain",mode:null};
 }
+const LANGUAGES = {
+  auto:null,
+  plain:{name:"Plain Text",mime:"text/plain",mode:null},
+  sourcepawn:{name:"SourcePawn",mime:"text/x-csrc",mode:"clike"},
+  c:{name:"C",mime:"text/x-csrc",mode:"clike"},
+  cpp:{name:"C++",mime:"text/x-c++src",mode:"clike"},
+  html:{name:"HTML",mime:"text/html",mode:"htmlmixed"},
+  css:{name:"CSS",mime:"text/css",mode:"css"},
+  javascript:{name:"JavaScript",mime:"text/javascript",mode:"javascript"},
+  typescript:{name:"TypeScript",mime:"application/typescript",mode:"javascript"},
+  json:{name:"JSON",mime:"application/json",mode:"javascript"},
+  python:{name:"Python",mime:"text/x-python",mode:"python"},
+  java:{name:"Java",mime:"text/x-java",mode:"clike"},
+  kotlin:{name:"Kotlin",mime:"text/x-kotlin",mode:"clike"},
+  php:{name:"PHP",mime:"application/x-httpd-php",mode:"php"},
+  sql:{name:"SQL",mime:"text/x-sql",mode:"sql"},
+  xml:{name:"XML",mime:"application/xml",mode:"xml"},
+  markdown:{name:"Markdown",mime:"text/x-markdown",mode:"markdown"},
+  yaml:{name:"YAML",mime:"text/x-yaml",mode:"yaml"},
+  shell:{name:"Shell",mime:"text/x-sh",mode:"shell"},
+  lua:{name:"Lua",mime:"text/x-lua",mode:"lua"},
+  rust:{name:"Rust",mime:"text/x-rustsrc",mode:"rust"},
+  go:{name:"Go",mime:"text/x-go",mode:"go"},
+  config:{name:"Config",mime:"text/x-properties",mode:"properties"},
+  valve:{name:"Valve KeyValues",mime:"valve-kv",mode:null}
+};
 function applyLanguage(file) {
-  const l=lang(file.path);
+  const l=(file.override && LANGUAGES[file.override]) || lang(file.path);
   cm.setOption("mode",l.mime);
   if (l.mode && CodeMirror.autoLoadMode) CodeMirror.autoLoadMode(cm,l.mode);
   $("status-lang").textContent=l.name;
+  $("language-select").value=file.override || "auto";
 }
 function isDirty(file) {return file.doc.getValue()!==file.saved;}
 function el(tag,cls,value) {
@@ -127,7 +154,7 @@ function saveSession() {
   clearTimeout(autosaveTimeout);
   autosaveTimeout=setTimeout(()=>{
     try {
-      const data={active:current?current.id:null,files:tabs.filter(f=>f.doc.getValue().length<=350000).slice(0,16).map(f=>({id:f.id,path:f.path,content:f.doc.getValue(),saved:f.saved}))};
+      const data={active:current?current.id:null,files:tabs.filter(f=>f.doc.getValue().length<=350000).slice(0,16).map(f=>({id:f.id,path:f.path,content:f.doc.getValue(),saved:f.saved,override:f.override}))};
       const serialized=JSON.stringify(data);
       if(serialized.length<1400000)sessionStorage.setItem("kirincode-session-v1",serialized);
     }catch(e){}
@@ -143,7 +170,7 @@ function activate(id) {
 }
 function add(path,content,selected=true,saved) {
   path=normPath(path);
-  const file={id:++seq,path:path,name:basename(path),doc:new CodeMirror.Doc(String(content),"text/plain"),saved:saved===undefined?String(content):String(saved)};
+  const file={id:++seq,path:path,name:basename(path),doc:new CodeMirror.Doc(String(content),"text/plain"),saved:saved===undefined?String(content):String(saved),override:"auto"};
   tabs.push(file);
   if(selected)activate(file.id);else render();
   saveSession();return file;
@@ -358,6 +385,7 @@ function restoreSession() {
     for(const f of saved.files.slice(0,16)) {
       if(!f||typeof f.path!=="string"||typeof f.content!=="string")continue;
       const obj=add(f.path,f.content,false,typeof f.saved==="string"?f.saved:f.content);
+      if(typeof f.override==="string" && Object.prototype.hasOwnProperty.call(LANGUAGES,f.override))obj.override=f.override;
       if(f.id===saved.active)target=obj;
     }
     if(tabs.length)activate((target||tabs[0]).id);
@@ -372,6 +400,14 @@ $("github-btn").onclick=githubFile;
 $("file-input").onchange=e=>{openFiles(e.target.files);e.target.value="";};
 $("folder-input").onchange=e=>{openFiles(e.target.files);e.target.value="";};
 $("search-files").oninput=render;
+$("language-select").addEventListener("change",(event)=>{
+  if(!current)return;
+  const name=event.target.value;
+  if(!Object.prototype.hasOwnProperty.call(LANGUAGES,name))return;
+  current.override=name;
+  applyLanguage(current);
+  saveSession();
+});
 $("find-btn").onclick=()=>showFind(true,false);
 $("replace-toggle-btn").onclick=()=>showFind(true,true);
 $("find-close").onclick=()=>showFind(false);
@@ -396,6 +432,15 @@ workspace.addEventListener("dragleave",e=>{e.preventDefault();dragLevel=Math.max
 workspace.addEventListener("drop",e=>{e.preventDefault();dragLevel=0;$("drop-overlay").classList.remove("visible");if(e.dataTransfer)openFiles(e.dataTransfer.files);});
 cm.on("cursorActivity",position);
 cm.on("change",()=>{if(current){render();position();updateMatches();saveSession();}});
+// Small, bounded integration surface for the public repository explorer.
+window.KirinCode = Object.freeze({
+  openExternalText(path, text) {
+    if(typeof text!=="string" || new Blob([text]).size>FILE_MAX)throw Error("Fail melebihi had 4 MB.");
+    add(path,text);
+  },
+  toast: say,
+  maxFileSize: FILE_MAX
+});
 applyConfig();
 if(!restoreSession())add("welcome.sp","// KirinCode — Multi-Language Code Editor\n// Buka fail dari peranti, ZIP atau pautan GitHub.\n\n#include <sourcemod>\n\npublic void OnPluginStart()\n{\n    PrintToServer(\"Hello from KirinCode!\");\n}\n");
 render();position();
