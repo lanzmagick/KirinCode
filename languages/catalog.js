@@ -8,7 +8,7 @@ function basename(path){return String(path||"untitled.txt").replace(/\\/g,"/").s
 function extension(path){return basename(path).split(".").pop().toLowerCase();}
 function lang(path) {
   const special = {
-    sp:["SourcePawn","text/x-csrc","clike"], inc:["SourcePawn","text/x-csrc","clike"],
+    sp:["SourcePawn","text/x-sourcepawn",null], inc:["SourcePawn","text/x-sourcepawn",null],
     cfg:["Config","text/x-properties","properties"],
     vdf:["Valve VDF","valve-kv",null],vmt:["Valve VMT","valve-kv",null],
     nut:["Squirrel","text/javascript","javascript"],
@@ -24,7 +24,7 @@ function lang(path) {
 const LANGUAGES = {
   auto:null,
   plain:{name:"Plain Text",mime:"text/plain",mode:null},
-  sourcepawn:{name:"SourcePawn",mime:"text/x-csrc",mode:"clike"},
+  sourcepawn:{name:"SourcePawn",mime:"text/x-sourcepawn",mode:null},
   c:{name:"C",mime:"text/x-csrc",mode:"clike"},
   cpp:{name:"C++",mime:"text/x-c++src",mode:"clike"},
   html:{name:"HTML",mime:"text/html",mode:"htmlmixed"},
