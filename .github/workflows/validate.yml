@@ -21,4 +21,6 @@ jobs:
         with:
           node-version: '22'
       - name: Run project validation
-        run: node scripts/check.mjs
+        run: |
+          node scripts/check.mjs
+          node scripts/test-sourcepawn.mjs
