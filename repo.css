@@ -1,0 +1,27 @@
+/* KirinCode 0.2 — repository explorer and language picker */
+.language-picker{display:inline-flex;align-items:center;flex:none}
+.language-picker select{font-size:11px;padding:4px 25px 4px 8px;border-color:var(--border);max-width:148px;background-color:var(--panel2);border-radius:7px}
+.repo-dialog{width:min(95vw,760px);height:min(88dvh,750px);max-height:850px;padding:0;display:flex;flex-direction:column;overflow:hidden;gap:0}
+.repo-header{padding:17px 20px 10px;display:flex;align-items:flex-start;gap:15px;justify-content:space-between}
+.repo-header h2{margin:0;font-size:18px}
+.repo-header p{color:var(--muted);font-size:12px;margin:5px 0 0}
+.repo-header .icon-btn{flex:none}
+.repo-connect{display:flex;align-items:center;gap:8px;padding:12px 20px 10px}
+.repo-connect input{flex:1;min-width:0}
+.repo-connect button{flex:none}
+.repo-summary{font-size:12px;color:var(--muted);padding:4px 20px 11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.repo-navigation{display:flex;align-items:center;gap:10px;padding:9px 20px;background:var(--panel2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.repo-navigation button{padding:5px 10px}
+.repo-breadcrumb{font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.repo-filter{margin:10px 20px 8px;width:calc(100% - 40px);flex:none}
+.repo-list{flex:1;min-height:120px;overflow:auto;overscroll-behavior:contain;padding:2px 13px 10px}
+.repo-entry{display:flex;width:100%;align-items:center;gap:12px;border:1px solid transparent;background:transparent;text-align:left;padding:10px 9px;border-radius:9px;min-width:0}
+.repo-entry:hover,.repo-entry:focus-visible{border-color:var(--border);background:var(--panel2)}
+.repo-symbol{display:grid;place-items:center;width:32px;height:32px;flex:none;background:var(--panel3);border-radius:9px;color:var(--accent2);font-size:17px}
+.repo-entry-label{display:flex;min-width:0;flex:1;flex-direction:column;gap:2px}
+.repo-entry-name{font-size:13px;font-weight:620;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.repo-entry-path{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.repo-entry-size{font-size:11px;color:var(--muted);flex:none}
+.repo-empty{font-size:13px;color:var(--muted);padding:20px;text-align:center}
+.repo-footer{padding:11px 20px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);background:var(--panel2)}
+@media(max-width:600px){.repo-dialog{width:100%;height:min(91dvh,900px);max-height:none;border-radius:17px 17px 0 0;margin-top:auto}.dialog-backdrop:has(.repo-dialog){align-items:flex-end;padding:0}.repo-header{padding:14px 12px 8px}.repo-header h2{font-size:16px}.repo-connect{padding:9px 12px;gap:6px}.repo-connect button{font-size:12px;padding:9px 8px}.repo-summary{padding:4px 12px 10px}.repo-navigation{padding:8px 12px}.repo-filter{margin:9px 12px;width:calc(100% - 24px)}.repo-list{padding:2px 7px 12px}.repo-footer{padding:11px 12px}.language-picker select{max-width:120px}}
