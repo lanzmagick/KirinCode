@@ -5,6 +5,8 @@ const $ = (id) => document.getElementById(id);
 const FILE_MAX = 4 * 1024 * 1024;
 const ZIP_MAX = 15 * 1024 * 1024;
 const tabs = [];
+const listeners = new Set();
+function emit(kind){for(const callback of listeners){try{callback(kind);}catch(error){console.error("KirinCode subscriber:",error);}}}
 let current = null, seq = 0, quiet = false, toastTimeout, autosaveTimeout, dragLevel = 0;
 let config = {theme:"dark",wrap:false,font:14,tab:2};
 try { Object.assign(config, JSON.parse(localStorage.getItem("kirincode-settings-v1") || "{}")); } catch(e) {}
@@ -113,13 +115,14 @@ function activate(id) {
   cm.swapDoc(file.doc);cm.setOption("readOnly",false);
   applyLanguage(file);render();position();hideSidebar();
   requestAnimationFrame(()=>cm.refresh());
+  emit("activate");
 }
 function add(path,content,selected=true,saved) {
   path=normPath(path);
   const file={id:++seq,path:path,name:basename(path),doc:new CodeMirror.Doc(String(content),"text/plain"),saved:saved===undefined?String(content):String(saved),override:"auto"};
   tabs.push(file);
   if(selected)activate(file.id);else render();
-  saveSession();return file;
+  saveSession();emit("files");return file;
 }
 function closeTab(id) {
   const i=tabs.findIndex(f=>f.id===id);
@@ -135,7 +138,7 @@ function closeTab(id) {
       $("status-lang").textContent="Plain Text";
     }
   }
-  render();position();saveSession();
+  render();position();saveSession();emit("files");
 }
 function switchNext(offset) {
   if(!current||tabs.length<2)return;
@@ -377,7 +380,7 @@ workspace.addEventListener("dragover",e=>e.preventDefault());
 workspace.addEventListener("dragleave",e=>{e.preventDefault();dragLevel=Math.max(0,dragLevel-1);if(!dragLevel)$("drop-overlay").classList.remove("visible");});
 workspace.addEventListener("drop",e=>{e.preventDefault();dragLevel=0;$("drop-overlay").classList.remove("visible");if(e.dataTransfer)openFiles(e.dataTransfer.files);});
 cm.on("cursorActivity",position);
-cm.on("change",()=>{if(current){render();position();updateMatches();saveSession();}});
+cm.on("change",()=>{if(current){render();position();updateMatches();saveSession();emit("edit");}});
 // Small, bounded integration surface for the public repository explorer.
 window.KirinCode = Object.freeze({
   openExternalText(path, text) {
@@ -385,7 +388,16 @@ window.KirinCode = Object.freeze({
     add(path,text);
   },
   toast: say,
-  maxFileSize: FILE_MAX
+  maxFileSize: FILE_MAX,
+  getFiles(){return tabs.map(file=>({
+    id:file.id,name:file.name,path:file.path,content:file.doc.getValue(),override:file.override
+  }));},
+  getActiveId(){return current?current.id:null;},
+  subscribe(listener){
+    if(typeof listener!=="function")throw TypeError("Listener must be function");
+    listeners.add(listener);
+    return ()=>listeners.delete(listener);
+  }
 });
 applyConfig();
 if(!restoreSession())add("welcome.sp","// KirinCode — Multi-Language Code Editor\n// Buka fail dari peranti, ZIP atau pautan GitHub.\n\n#include <sourcemod>\n\npublic void OnPluginStart()\n{\n    PrintToServer(\"Hello from KirinCode!\");\n}\n");
