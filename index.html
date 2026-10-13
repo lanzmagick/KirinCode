@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101a2b">
+  <meta name="description" content="KirinCode — editor kod pelbagai bahasa dalam pelayar. Buka, edit dan simpan fail tanpa akaun.">
+  <title>KirinCode — Multi-Language Code Editor</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/theme/material-darker.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/theme/eclipse.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldgutter.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="icon-btn mobile-only" id="menu-btn" title="Menu fail" aria-label="Buka menu">☰</button>
+      <div class="brand"><div class="logo">&lt;/&gt;</div><div class="brand-copy"><strong>KirinCode</strong><small>Multi-Language Code Viewer &amp; Editor</small></div></div>
+      <div class="top-actions">
+        <button id="new-btn" title="Fail baru (Ctrl+N)">＋ <span class="desktop-label">New</span></button>
+        <button id="open-btn" title="Buka fail (Ctrl+O)">▤ <span class="desktop-label">Open</span></button>
+        <button class="primary" id="save-btn" title="Muat turun fail (Ctrl+S)">↓ <span class="desktop-label">Save</span></button>
+        <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
+      </div>
+    </header>
+    <div class="workspace" id="workspace">
+      <div class="sidebar-scrim" id="sidebar-scrim"></div>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-heading"><h2>EXPLORER</h2><div class="sidebar-tools">
+          <button class="ghost" id="new-side-btn" title="New file">＋</button>
+          <button class="ghost" id="open-side-btn" title="Open files">▤</button>
+          <button class="ghost mobile-only" id="sidebar-close" title="Close sidebar">✕</button>
+        </div></div>
+        <input class="search-files" id="search-files" type="search" placeholder="Cari nama fail..." aria-label="Cari nama fail">
+        <nav class="file-list" id="file-list" aria-label="Fail terbuka"></nav>
+        <div class="sidebar-foot">Fail kekal di pelayar anda • Tiada upload automatik</div>
+      </aside>
+      <main class="main">
+        <div class="toolbar">
+          <button id="folder-btn" title="Open folder (supported browsers)">▣ <span class="desktop-label">Folder</span></button>
+          <button id="github-btn" title="Buka pautan fail GitHub">⌁ <span class="desktop-label">GitHub File</span></button>
+          <button id="zip-btn" title="Download semua fail sebagai ZIP">▥ <span class="desktop-label">Export ZIP</span></button>
+          <div class="separator"></div>
+          <button id="find-btn" title="Find (Ctrl+F)">⌕ <span class="desktop-label">Find</span></button>
+          <button id="replace-toggle-btn" title="Replace (Ctrl+H)">⇄ <span class="desktop-label">Replace</span></button>
+          <div class="spacer"></div>
+          <span class="shortcut">Ctrl+S · Ctrl+F · Ctrl+N</span>
+        </div>
+        <div class="tabbar" id="tabs" role="tablist" aria-label="Fail terbuka"></div>
+        <div class="findbar" id="findbar" aria-label="Search and replace">
+          <input type="search" id="find-input" placeholder="Find..." aria-label="Find text">
+          <input type="text" id="replace-input" placeholder="Replace with..." class="hide" aria-label="Replace with">
+          <label title="Case sensitive"><input type="checkbox" id="find-case"> Aa</label>
+          <label title="Regular expression"><input type="checkbox" id="find-regex"> .* </label>
+          <span class="match-count" id="match-count">0 padanan</span>
+          <button id="find-prev" title="Previous match">↑</button>
+          <button id="find-next" title="Next match">↓</button>
+          <button id="replace-btn" class="hide">Replace</button>
+          <button id="replace-all-btn" class="hide">All</button>
+          <button class="icon-btn" id="find-close" title="Close">✕</button>
+        </div>
+        <div class="editor-wrap"><textarea id="code-input" aria-label="Code editor"></textarea></div>
+        <footer class="statusbar">
+          <span id="status-file">Tiada fail</span>
+          <span class="push"></span><span id="status-count">0 files</span>
+          <span class="chip" id="status-lang">Plain Text</span>
+          <span id="status-pos">Ln 1, Col 1</span>
+          <span id="status-length">0 aksara</span>
+          <span>UTF-8</span>
+        </footer>
+      </main>
+      <div class="drop-overlay" id="drop-overlay"><strong>Drop files here</strong><p>Buka kod atau ZIP tanpa upload ke server.</p></div>
+    </div>
+  </div>
+  <input type="file" id="file-input" multiple hidden>
+  <input type="file" id="folder-input" webkitdirectory directory multiple hidden>
+  <div class="dialog-backdrop" id="settings-dialog" aria-hidden="true">
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <h2 id="settings-title">KirinCode Settings</h2>
+      <label class="setting"><span>Theme</span><select id="theme-select"><option value="dark">Dark</option><option value="light">Light</option></select></label>
+      <label class="setting"><span>Word Wrap</span><select id="wrap-select"><option value="false">Off</option><option value="true">On</option></select></label>
+      <label class="setting"><span>Font size</span><input id="font-input" type="number" min="11" max="24" value="14"></label>
+      <label class="setting"><span>Tab width</span><select id="tab-select"><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="8">8 spaces</option></select></label>
+      <div class="dialog-footer"><button class="primary" id="settings-close">Done</button></div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <noscript>KirinCode memerlukan JavaScript untuk menjalankan editor.</noscript>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/meta.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/mode/loadmode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/selection/active-line.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldgutter.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/brace-fold.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/indent-fold.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/search/searchcursor.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
