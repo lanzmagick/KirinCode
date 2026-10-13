@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/theme/eclipse.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/fold/foldgutter.min.css">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="repo.css">
 </head>
 <body>
   <div class="app">
@@ -41,6 +42,7 @@
         <div class="toolbar">
           <button id="folder-btn" title="Open folder (supported browsers)">▣ <span class="desktop-label">Folder</span></button>
           <button id="github-btn" title="Buka pautan fail GitHub">⌁ <span class="desktop-label">GitHub File</span></button>
+          <button id="repo-btn" title="Teroka repositori GitHub awam">▦ <span class="desktop-label">GitHub Repo</span></button>
           <button id="zip-btn" title="Download semua fail sebagai ZIP">▥ <span class="desktop-label">Export ZIP</span></button>
           <div class="separator"></div>
           <button id="find-btn" title="Find (Ctrl+F)">⌕ <span class="desktop-label">Find</span></button>
@@ -66,6 +68,34 @@
           <span id="status-file">Tiada fail</span>
           <span class="push"></span><span id="status-count">0 files</span>
           <span class="chip" id="status-lang">Plain Text</span>
+          <label class="language-picker"><span class="screenreader">Pilih bahasa kod</span>
+            <select id="language-select" aria-label="Language highlighting">
+              <option value="auto">Auto Detect</option>
+              <option value="plain">Plain Text</option>
+              <option value="sourcepawn">SourcePawn</option>
+              <option value="c">C</option>
+              <option value="cpp">C++</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="javascript">JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="json">JSON</option>
+              <option value="python">Python</option>
+              <option value="java">Java</option>
+              <option value="kotlin">Kotlin</option>
+              <option value="php">PHP</option>
+              <option value="sql">SQL</option>
+              <option value="xml">XML</option>
+              <option value="markdown">Markdown</option>
+              <option value="yaml">YAML</option>
+              <option value="shell">Shell</option>
+              <option value="lua">Lua</option>
+              <option value="rust">Rust</option>
+              <option value="go">Go</option>
+              <option value="config">Configuration</option>
+              <option value="valve">Valve KeyValues</option>
+            </select>
+          </label>
           <span id="status-pos">Ln 1, Col 1</span>
           <span id="status-length">0 aksara</span>
           <span>UTF-8</span>
@@ -86,10 +116,36 @@
       <div class="dialog-footer"><button class="primary" id="settings-close">Done</button></div>
     </section>
   </div>
+  <div class="dialog-backdrop" id="repo-dialog" aria-hidden="true">
+    <section class="dialog repo-dialog" role="dialog" aria-modal="true" aria-labelledby="repo-title">
+      <header class="repo-header">
+        <div><h2 id="repo-title">GitHub Repository Explorer</h2><p>Repositori awam sahaja • Buka kod sebagai salinan tempatan</p></div>
+        <button id="repo-close" aria-label="Tutup" class="icon-btn">✕</button>
+      </header>
+      <form id="repo-connect" class="repo-connect">
+        <input id="repo-url" type="text" value="lanzmagick/KirinCode" autocomplete="off" spellcheck="false" placeholder="owner/repo atau URL GitHub" aria-label="Repositori GitHub" required>
+        <button id="repo-load" class="primary" type="submit">Open Repo</button>
+      </form>
+      <div id="repo-summary" class="repo-summary" aria-live="polite">Masukkan nama repositori untuk memaparkan fail.</div>
+      <div class="repo-navigation">
+        <button id="repo-up" title="Folder induk" disabled>↑</button>
+        <span id="repo-breadcrumb" class="repo-breadcrumb">/</span>
+      </div>
+      <input type="search" id="repo-filter" class="repo-filter" placeholder="Cari fail dalam repositori..." aria-label="Cari fail GitHub">
+      <div id="repo-list" class="repo-list" role="group" aria-label="Kandungan repo"></div>
+      <div id="repo-footer" class="repo-footer">Tanpa token atau akses penulisan ke GitHub.</div>
+    </section>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <noscript>KirinCode memerlukan JavaScript untuk menjalankan editor.</noscript>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/meta.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/mode/properties/properties.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/mode/loadmode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/edit/matchbrackets.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/edit/closebrackets.min.js"></script>
@@ -101,5 +157,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.20/addon/search/searchcursor.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="app.js"></script>
+  <script src="repo-explorer.js"></script>
 </body>
 </html>
