@@ -4,11 +4,11 @@
 
 **Laman (selepas GitHub Pages diaktifkan):** https://lanzmagick.github.io/KirinCode/
 
-## Ciri versi 0.2
+## Ciri versi 0.3
 
 - **Code viewer dan editor:** syntax highlighting, nombor baris, code folding, bracket matching, auto-close brackets, word wrap, tab spacing dan tetapan saiz font.
 - **Pelbagai bahasa:** CodeMirror memuatkan mode mengikut extension secara automatik. HTML, CSS, JS, JSON, XML, Markdown, Python, C/C++, Java, PHP, SQL dan banyak lagi (bergantung pada mode yang tersedia).
-- **Format Left 4 Dead 2 / SourceMod:** .sp, .inc (highlight gaya C), .cfg (properties), .nut (gaya JS), .vdf dan .vmt (mode Valve KeyValues asas).
+- **Format Left 4 Dead 2 / SourceMod:** .sp dan .inc kini menggunakan tokenizer SourcePawn khusus: preprocessor, methodmap, enum struct, native, forward, string, komen berbilang baris dan beberapa API popular SourceMod. Format .cfg, .nut, .vdf, .vmt kekal disokong.
 - **Fallback Plain Text:** semua fail teks yang tidak dikenali boleh dibuka tanpa syntax highlighting.
 - **Multiple tabs:** buka/edit banyak fail, serta pengesanan perubahan belum disimpan.
 - **Find / Replace:** cari, kes sensitif, regex, ganti satu atau semua.
@@ -26,11 +26,15 @@
 - Butang **Save** memuat turun salinan UTF-8 ke peranti; **bukan** commit atau menulis kembali ke GitHub.
 - ZIP dihadkan kepada **15 MB** dan **120 entri**; fail teks tunggal maksimum **4 MB** demi prestasi.
 - Fail binari, media, fail tersulit dan arkib selain ZIP belum disokong.
-- Bahasa yang tiada mode CodeMirror dipaparkan sebagai teks biasa. Sesetengah extension khas menggunakan highlighting anggaran, bukan parser khusus.
+- Bahasa yang tiada mode CodeMirror dipaparkan sebagai teks biasa. SourcePawn menggunakan lexer khusus untuk warna kod, **bukan compiler, validator atau autocomplete semantik penuh**. Fungsi custom masih boleh dipaparkan sebagai fungsi biasa.
 - GitHub Explorer hanya membaca **repositori awam** pada **default branch**. GitHub API boleh menghadkan permintaan awam tanpa token, dan senarai repo yang terlalu besar mungkin dipotong.
 - Fungsi GitHub File asal masih untuk satu URL fail pada satu masa; nama branch yang mengandungi slash mungkin memerlukan URL raw yang tepat.
 - CodeMirror, JSZip dan mode bahasa dimuatkan melalui CDN; Internet diperlukan untuk editor penuh. CodeMirror 5 adalah pustaka lama; migrasi CodeMirror 6 boleh dipertimbangkan kemudian.
 - Simpanan sesi bukan sandaran: **muat turun fail penting**. Data besar mungkin tidak masuk ke sessionStorage.
+
+## Menggunakan mod SourcePawn
+
+Buka fail `.sp` atau `.inc` dan syntax highlighting akan dikesan secara automatik. Untuk fail tanpa extension, pilih **SourcePawn** daripada senarai bahasa di status bar. Sokongan warna meliputi kedua-dua sintaks lama dan newdecls. Pengesanan ralat compile belum disokong.
 
 ## Cara guna GitHub Repo Explorer
 
@@ -83,9 +87,11 @@ KirinCode/
 │       └── icon.svg
 ├── languages/
 │   ├── catalog.js
+│   ├── sourcepawn.js
 │   └── valve-keyvalues.js
 ├── scripts/
-│   └── check.mjs
+│   ├── check.mjs
+│   └── test-sourcepawn.mjs
 └── .github/
     └── workflows/
         └── validate.yml
@@ -98,6 +104,8 @@ KirinCode/
 - `assets/icons/` — favicon dan ikon
 - `languages/catalog.js` — pengesanan format, 24 pilihan bahasa dan rujukan CodeMirror
 - `languages/valve-keyvalues.js` — mode khas Valve VDF/VMT
+- `languages/sourcepawn.js` — lexer SourcePawn khusus untuk .sp dan .inc
+- `scripts/test-sourcepawn.mjs` — ujian token SourcePawn
 - `scripts/check.mjs` — pemeriksaan sintaks, laluan fail dan UI
 - .github/workflows/validate.yml — semakan automatik semasa push/PR
 
@@ -109,7 +117,8 @@ KirinCode/
 - [x] Viewer fail GitHub awam
 - [x] GitHub repo explorer (folder & tree) untuk repositori awam
 - [x] Language picker manual setiap tab
-- [ ] Syntax highlighting SourcePawn penuh (parser khusus, bukan C-like)
+- [x] Syntax highlighting SourcePawn khusus (tokenizer, bukan compiler)
+- [ ] Custom SourceMod API token dictionary/import daripada fail .inc
 - [ ] Markdown/HTML preview yang selamat
 - [ ] Offline PWA dan pilihan backup draf
 - [ ] Penambahbaikan aksesibiliti, ujian E2E dan penskalaan fail besar
