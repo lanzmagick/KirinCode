@@ -14,11 +14,18 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/repo.css">
   <link rel="stylesheet" href="assets/css/workbench.css">
+  <style id="menu-align-fix">
+    /* Android hamburger: hide on desktop, center the SVG exactly on mobile. */
+    @media (max-width: 820px) {
+      .topbar #menu-btn { display: grid !important; place-items: center !important; width: 42px !important; height: 42px !important; min-width: 42px !important; padding: 0 !important; line-height: 0 !important; }
+      .topbar #menu-btn .menu-icon { display: block !important; width: 24px !important; height: 24px !important; margin: 0 !important; transform: none !important; }
+    }
+  </style>
 </head>
 <body>
   <div class="app">
     <header class="topbar">
-      <button class="icon-btn mobile-only" id="menu-btn" type="button" title="Menu fail" aria-label="Buka menu"><svg class="menu-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+      <button class="icon-btn mobile-only" id="menu-btn" type="button" title="Menu fail" aria-label="Buka menu" style="width:42px;height:42px;min-width:42px;padding:0;flex:0 0 42px;align-items:center;justify-content:center;line-height:0"><svg class="menu-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="display:block;width:24px;height:24px;flex:none;margin:0;transform:none"><path d="M5 6H19 M5 12H19 M5 18H19"></path></svg></button>
       <div class="brand"><div class="logo">&lt;/&gt;</div><div class="brand-copy"><strong>KirinCode</strong><small>Multi-Language Code Viewer &amp; Editor</small></div></div>
       <div class="top-actions">
         <button id="new-btn" title="Fail baru (Ctrl+N)">＋ <span class="desktop-label">New</span></button>
