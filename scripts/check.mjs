@@ -6,6 +6,19 @@ function get(path) {
   return readFileSync(path, "utf8");
 }
 const html = get("index.html");
+// Validate startup assets are vendored and accessible on GitHub Pages.
+const vendorNames = ["codemirror.min.js","codemirror.min.css","theme/material-darker.min.css","theme/eclipse.min.css","addon/fold/foldgutter.min.css","addon/edit/matchbrackets.min.js","addon/edit/closebrackets.min.js","addon/selection/active-line.min.js","addon/fold/foldcode.min.js","addon/fold/foldgutter.min.js","addon/fold/brace-fold.min.js","addon/fold/indent-fold.min.js","addon/search/searchcursor.min.js"];
+for (const name of vendorNames) {
+  const path = "assets/vendor/codemirror/5.65.20/" + name;
+  get(path);
+  assert.ok(html.includes('"' + path + '"'), "Missing vendored asset: " + path);
+}
+const jszipVendor = "assets/vendor/jszip/3.10.1/jszip.min.js";
+get(jszipVendor);
+assert.ok(html.includes('"' + jszipVendor + '"'), "Missing JSZip vendor script");
+assert.doesNotMatch(html, /(?:src|href)="https?:\/\//i, "Scripts and stylesheet links must be local");
+get("assets/vendor/codemirror/LICENSE.md");
+get("assets/vendor/jszip/LICENSE.markdown");
 // Files listed in index.html are loaded at startup; lazy-loaded scripts are validated separately.
 const sourcePaths = [
   "assets/js/app.js",

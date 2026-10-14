@@ -4,7 +4,7 @@
 
 **Laman (selepas GitHub Pages diaktifkan):** https://lanzmagick.github.io/KirinCode/
 
-## Ciri versi 0.5
+## Ciri versi 0.6
 
 - **Code viewer dan editor:** syntax highlighting, nombor baris, code folding, bracket matching, auto-close brackets, word wrap, tab spacing dan tetapan saiz font.
 - **Pelbagai bahasa:** 23 mode CodeMirror sumber tempatan dengan loading mengikut keperluan; pilihan tambahan C#, Ruby, Perl, Swift, Dart, Dockerfile, Diff, PowerShell dan TOML. Sokongan Java/Kotlin/C/C++ melalui mode C-like serta JSON/TypeScript melalui JavaScript.
@@ -31,12 +31,25 @@
 - Bahasa yang tiada mode CodeMirror dipaparkan sebagai teks biasa. SourcePawn menggunakan lexer khusus untuk warna kod, **bukan compiler, validator atau autocomplete semantik penuh**. Fungsi custom masih boleh dipaparkan sebagai fungsi biasa.
 - GitHub Explorer hanya membaca **repositori awam** pada **default branch**. GitHub API boleh menghadkan permintaan awam tanpa token, dan senarai repo yang terlalu besar mungkin dipotong.
 - Fungsi GitHub File asal masih untuk satu URL fail pada satu masa; nama branch yang mengandungi slash mungkin memerlukan URL raw yang tepat.
-- **Mode bahasa tidak lagi diambil dari CDN.** Fail CodeMirror 5.65.20 yang diperlukan disimpan dalam folder languages/ bersama lesen upstream. Enjin editor CodeMirror 5, tema, addon UI dan JSZip **masih menggunakan CDN**, jadi Internet masih diperlukan untuk memulakan editor penuh. Mode yang belum dibundel dipaparkan dalam Plain Text; CodeMirror 6 boleh dipertimbangkan kemudian.
+- **CodeMirror 5.65.20 (enjin, tema, addon) dan JSZip 3.10.1 kini dihoskan tempatan** di `assets/vendor/`. Tiada lagi pautan CDN untuk menjalankan editor. Mode bahasa juga tempatan, dengan lazy-load berdasarkan bahasa. Namun, offline sepenuhnya pada pelayaran semula belum dijamin tanpa service worker; GitHub Repo Explorer masih memerlukan Internet.
 - Simpanan sesi bukan sandaran: **muat turun fail penting**. Data besar mungkin tidak masuk ke sessionStorage.
 - Live Preview HTML menyekat **JavaScript, borang, rangka bersarang, sambungan rangkaian JavaScript dan aset selain gambar HTTPS/data serta gaya inline**. Ini untuk keselamatan; bukan pelayar penuh atau laman web dinamik.
 - Preview Markdown menyokong tajuk, teks tebal/condong, pautan selamat, gambar HTTPS, senarai, checklist, jadual, petikan dan blok kod. Ia belum menyokong seluruh spesifikasi CommonMark/GFM.
 - Live Preview dihadkan kepada **200,000 aksara setiap fail** untuk mengelakkan pembekuan pelayar Android. Kod yang lebih besar masih boleh diedit tanpa preview.
 - Compare Code dihadkan kepada **1,200 baris setiap fail**; perbandingan baris sahaja, bukan diff perkataan atau Git commit.
+
+## Vendor tempatan — Patch 0.6
+
+Semua dependensi yang digunakan pada `index.html` kini datang dari fail di repo sendiri:
+
+- `assets/vendor/codemirror/5.65.20/` — CodeMirror core JS/CSS, tema `material-darker` dan `eclipse`, serta addon match/close brackets, active line, fold dan search cursor.
+- `assets/vendor/jszip/3.10.1/` — JSZip bagi import/eksport ZIP.
+- `assets/vendor/codemirror/LICENSE.md` — lesen upstream MIT CodeMirror.
+- `assets/vendor/jszip/LICENSE.markdown` — pilihan lesen upstream MIT atau GPLv3 untuk JSZip.
+
+**Keupayaan offline:** semua fail statik aplikasi kini berasal dari GitHub Pages sendiri; selepas fail dimuat, browser boleh menggunakan cache HTTP yang sedia ada. Tetapi ini **belum PWA offline penuh** — Chrome mungkin tidak boleh membuka semula halaman dari awal tanpa sambungan sekiranya cache dibuang. Service worker yang mengawal seluruh laman GitHub Pages lazimnya memerlukan `sw.js` pada root, jadi ia belum ditambah demi mengekalkan syarat root hanya HTML dan Markdown.
+
+Ujian `node scripts/test-vendor.mjs` memeriksa fail vendor, lesen dan fungsi ZIP round-trip.
 
 ## Mode bahasa tempatan
 
@@ -87,7 +100,7 @@ Tiada proses npm install, backend atau build diperlukan. index.html berada terus
 
 ## Struktur projek
 
-Semua fail highlighting bahasa berada dalam folder **languages/** dan dimuat hanya apabila diperlukan. Fail sumber CodeMirror 5.65.20 dikekalkan dengan lesen MIT asal. CodeMirror core, gaya UI dan addon bukan-bahasa masih dimuatkan dari CDN.
+Semua fail highlighting bahasa berada dalam folder **languages/** dan dimuat hanya apabila diperlukan. Fail sumber CodeMirror 5.65.20 dikekalkan dengan lesen MIT asal. CodeMirror core, gaya UI, addon dan JSZip kini disimpan dalam `assets/vendor/`.
 
 ```text
 KirinCode/
@@ -95,6 +108,7 @@ KirinCode/
 ├── README.md
 ├── LICENSE.md
 ├── assets/
+│   ├── vendor/ (CodeMirror 5.65.20, JSZip 3.10.1)
 │   ├── css/
 │   │   ├── style.css
 │   │   ├── repo.css
@@ -151,7 +165,8 @@ KirinCode/
 - [x] Syntax highlighting SourcePawn khusus (tokenizer, bukan compiler)
 - [ ] Custom SourceMod API token dictionary/import daripada fail .inc
 - [x] 23 mode bahasa tempatan dan loader dependensi berperingkat
-- [ ] Self-host CodeMirror core, addon editor dan JSZip untuk offline penuh
+- [x] Self-host CodeMirror core, addon editor dan JSZip (tiada CDN)
+- [ ] PWA offline penuh dengan service worker (memerlukan pengecualian fail `sw.js` di root)
 - [x] Live Preview HTML/Markdown menggunakan iframe sandbox dan CSP terhad
 - [x] Compare Code dua tab dengan diff baris responsif
 - [ ] Live Preview Markdown berasaskan renderer lengkap CommonMark/GFM dan ujian pelayar automatik
@@ -168,4 +183,4 @@ Pustaka pihak ketiga seperti CodeMirror dan JSZip mempunyai lesen masing-masing;
 
 ## Kredit
 
-CodeMirror 5 (MIT), JSZip (MIT). KirinCode dibangunkan sebagai projek web statik. Semakan GitHub Actions menggunakan Node.js (tanpa pemasangan dependensi).
+CodeMirror 5 (MIT), JSZip (MIT atau GPLv3 — pengguna pilih). KirinCode dibangunkan sebagai projek web statik. Semakan GitHub Actions menggunakan Node.js (tanpa pemasangan dependensi).

@@ -26,3 +26,4 @@ jobs:
           node scripts/test-sourcepawn.mjs
           node scripts/test-workbench.mjs
           node scripts/test-languages.mjs
+          node scripts/test-vendor.mjs
