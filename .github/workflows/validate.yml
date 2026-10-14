@@ -27,3 +27,4 @@ jobs:
           node scripts/test-workbench.mjs
           node scripts/test-languages.mjs
           node scripts/test-vendor.mjs
+          node scripts/test-completion.mjs

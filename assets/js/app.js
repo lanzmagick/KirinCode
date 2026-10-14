@@ -402,6 +402,19 @@ window.KirinCode = Object.freeze({
   },
   toast: say,
   maxFileSize: FILE_MAX,
+  getEditor(){return cm;},
+  getCompletionFiles(){
+    const candidates=[];
+    if(current)candidates.push(current);
+    for(const file of tabs){
+      if(candidates.length>=17)break;
+      if(file!==current && /\.inc$/i.test(file.path))candidates.push(file);
+    }
+    return candidates.map(file=>({
+      id:file.id,name:file.name,path:file.path,override:file.override,
+      content:file.doc.getValue().slice(0,200000)
+    }));
+  },
   getFiles(){return tabs.map(file=>({
     id:file.id,name:file.name,path:file.path,content:file.doc.getValue(),override:file.override
   }));},

@@ -7,7 +7,7 @@ function get(path) {
 }
 const html = get("index.html");
 // Validate startup assets are vendored and accessible on GitHub Pages.
-const vendorNames = ["codemirror.min.js","codemirror.min.css","theme/material-darker.min.css","theme/eclipse.min.css","addon/fold/foldgutter.min.css","addon/edit/matchbrackets.min.js","addon/edit/closebrackets.min.js","addon/selection/active-line.min.js","addon/fold/foldcode.min.js","addon/fold/foldgutter.min.js","addon/fold/brace-fold.min.js","addon/fold/indent-fold.min.js","addon/search/searchcursor.min.js"];
+const vendorNames = ["addon/hint/show-hint.min.js","addon/hint/show-hint.min.css","codemirror.min.js","codemirror.min.css","theme/material-darker.min.css","theme/eclipse.min.css","addon/fold/foldgutter.min.css","addon/edit/matchbrackets.min.js","addon/edit/closebrackets.min.js","addon/selection/active-line.min.js","addon/fold/foldcode.min.js","addon/fold/foldgutter.min.js","addon/fold/brace-fold.min.js","addon/fold/indent-fold.min.js","addon/search/searchcursor.min.js"];
 for (const name of vendorNames) {
   const path = "assets/vendor/codemirror/5.65.20/" + name;
   get(path);
@@ -25,7 +25,9 @@ const sourcePaths = [
   "assets/js/repo-explorer.js",
   "assets/js/workbench-core.js",
   "assets/js/workbench.js",
+  "assets/js/autocomplete.js",
   "languages/catalog.js",
+  "languages/completions.js",
   "languages/loader.js",
   "languages/_shared/meta.js",
   "languages/_shared/simple.js",
@@ -35,7 +37,7 @@ const sourcePaths = [
 for (const path of sourcePaths) {
   assert.doesNotThrow(() => new Function(get(path)), "Invalid JavaScript syntax in " + path);
 }
-for (const path of ["assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/icons/icon.svg"]) get(path);
+for (const path of ["assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/css/autocomplete.css", "assets/icons/icon.svg"]) get(path);
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 assert.equal(ids.length, new Set(ids).size, "Duplicate HTML IDs");
@@ -47,7 +49,7 @@ for (const path of sourcePaths) {
 }
 
 const lazyLoadedPaths = new Set(["languages/_shared/simple.js"]);
-for (const path of [...sourcePaths.filter(path => !lazyLoadedPaths.has(path)), "assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/icons/icon.svg"]) {
+for (const path of [...sourcePaths.filter(path => !lazyLoadedPaths.has(path)), "assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/css/autocomplete.css", "assets/icons/icon.svg"]) {
   assert.ok(html.includes('"' + path + '"'), "Missing startup asset path in HTML: " + path);
 }
 // A lazily loaded script is expected in the local language loader, NOT as a script tag in index.html.
@@ -55,7 +57,7 @@ const modeLoader = get("languages/loader.js");
 for (const path of lazyLoadedPaths) {
   assert.ok(modeLoader.includes(path.replace(/^languages\//, "")), "Lazy script not registered: " + path);
 }
-const dependencyOrder = ["languages/_shared/meta.js", "languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/loader.js", "languages/catalog.js", "assets/js/workbench-core.js", "assets/js/app.js", "assets/js/workbench.js", "assets/js/repo-explorer.js"];
+const dependencyOrder = ["languages/_shared/meta.js", "languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/loader.js", "languages/catalog.js", "assets/js/workbench-core.js", "languages/completions.js", "assets/js/app.js", "assets/js/autocomplete.js", "assets/js/workbench.js", "assets/js/repo-explorer.js"];
 for (let i = 1; i < dependencyOrder.length; i++) {
   assert.ok(html.indexOf('src="' + dependencyOrder[i] + '"') > html.indexOf('src="' + dependencyOrder[i-1] + '"'), "Script order invalid");
 }

@@ -4,7 +4,7 @@
 
 **Laman (selepas GitHub Pages diaktifkan):** https://lanzmagick.github.io/KirinCode/
 
-## Ciri versi 0.6
+## Ciri versi 0.7
 
 - **Code viewer dan editor:** syntax highlighting, nombor baris, code folding, bracket matching, auto-close brackets, word wrap, tab spacing dan tetapan saiz font.
 - **Pelbagai bahasa:** 23 mode CodeMirror sumber tempatan dengan loading mengikut keperluan; pilihan tambahan C#, Ruby, Perl, Swift, Dart, Dockerfile, Diff, PowerShell dan TOML. Sokongan Java/Kotlin/C/C++ melalui mode C-like serta JSON/TypeScript melalui JavaScript.
@@ -16,6 +16,7 @@
 - **ZIP:** baca fail teks daripada ZIP dan eksport semua tab sebagai satu ZIP.
 - **GitHub File:** baca fail awam menggunakan pautan fail github.com atau raw.githubusercontent.com.
 - **GitHub Repository Explorer:** masukkan owner/repo atau URL repo awam, buka folder, cari fail dan buka kod daripada GitHub terus ke tab tempatan (tanpa token).
+- **Autocomplete:** cadangan keyword, simbol kod setempat dan fungsi daripada fail SourcePawn `.inc` yang dibuka dalam tab. Mempunyai butang Suggest (termasuk Android), Ctrl+Space dan pilihan On/Off untuk cadangan automatik.
 - **Manual language selector:** pilih salah satu daripada 24 mod (termasuk Auto Detect), berguna apabila extension tidak dikenali; pilihan disimpan bagi sesi tab.
 - **Live Preview:** paparan HTML dan Markdown sambil menaip. Desktop memaparkan editor dan preview sebelah-menyebelah; telefon menggunakan panel preview. HTML dijalankan dalam iframe sandbox tanpa JavaScript.
 - **Compare Code:** bandingkan dua tab terbuka, paparkan nombor baris dan perbezaan yang ditambah, dipadam atau diubah.
@@ -60,6 +61,16 @@ Pilih **Auto Detect** supaya extension fail memilih script tempatan secara autom
 ## Menggunakan mod SourcePawn
 
 Buka fail `.sp` atau `.inc` dan syntax highlighting akan dikesan secara automatik. Untuk fail tanpa extension, pilih **SourcePawn** daripada senarai bahasa di status bar. Sokongan warna meliputi kedua-dua sintaks lama dan newdecls. Pengesanan ralat compile belum disokong.
+
+## Autocomplete Code — Patch 0.7
+
+Buka fail `.sp` dan fail `.inc` berkaitan dalam tab KirinCode. Taip sekurang-kurangnya **3 aksara** untuk melihat cadangan nama fungsi, keyword dan macro. Tekan **Suggest** pada toolbar atau **Ctrl+Space** / **Alt+/** untuk memanggil cadangan secara manual.
+
+Pada telefon, sentuh cadangan. Di desktop gunakan anak panah dan Enter. Untuk tutup cadangan automatik, pilih **Settings → Autocomplete → Off**; butang Suggest masih berfungsi.
+
+Cadangan SourcePawn diambil **hanya daripada fail `.inc` yang sedang dibuka**, termasuk fail dari folder, ZIP atau GitHub Explorer. Tiada permintaan tambahan ke internet untuk mengesan API. Parser menyokong beberapa deklarasi `native`, `forward`, `stock`, `public`, `methodmap`, `enum` dan `#define`; ia **bukan compiler atau autocomplete semantik penuh**. KirinCode menyisipkan nama fungsi sahaja, tanpa menambah kurungan secara automatik.
+
+Untuk prestasi Android, sehingga 16 fail `.inc` (200 KB setiap fail) dianalisis, dan paling banyak 45 cadangan dipaparkan pada satu masa.
 
 ## Cara guna Live Preview dan Compare Code
 
@@ -112,17 +123,20 @@ KirinCode/
 │   ├── css/
 │   │   ├── style.css
 │   │   ├── repo.css
-│   │   └── workbench.css
+│   │   ├── workbench.css
+│   │   └── autocomplete.css
 │   ├── js/
 │   │   ├── app.js
 │   │   ├── repo-explorer.js
 │   │   ├── workbench-core.js
-│   │   └── workbench.js
+│   │   ├── workbench.js
+│   │   └── autocomplete.js
 │   └── icons/
 │       └── icon.svg
 ├── languages/
 │   ├── catalog.js
 │   ├── loader.js
+│   ├── completions.js
 │   ├── sourcepawn.js
 │   ├── valve-keyvalues.js
 │   ├── _shared/ (meta.js, simple.js)
@@ -132,7 +146,10 @@ KirinCode/
 ├── scripts/
 │   ├── check.mjs
 │   ├── test-sourcepawn.mjs
-│   └── test-workbench.mjs
+│   ├── test-workbench.mjs
+│   ├── test-vendor.mjs
+│   ├── test-languages.mjs
+│   └── test-completion.mjs
 └── .github/
     └── workflows/
         └── validate.yml
@@ -149,6 +166,8 @@ KirinCode/
 - `languages/<mode>/` — salinan source CodeMirror 5.65.20 yang berkaitan
 - `languages/valve-keyvalues.js` — mode khas Valve VDF/VMT
 - `languages/sourcepawn.js` — lexer SourcePawn khusus untuk .sp dan .inc
+- `languages/completions.js` — pengesanan fungsi/macro dari fail .inc dan keyword kod
+- `assets/js/autocomplete.js`, `assets/css/autocomplete.css` — antaramuka cadangan desktop/Android
 - `scripts/test-sourcepawn.mjs` — ujian token SourcePawn
 - `scripts/test-workbench.mjs` — ujian Markdown, iframe CSP, diff dan sambungan UI
 - `scripts/check.mjs` — pemeriksaan sintaks, laluan fail dan UI
@@ -163,7 +182,8 @@ KirinCode/
 - [x] GitHub repo explorer (folder & tree) untuk repositori awam
 - [x] Language picker manual setiap tab
 - [x] Syntax highlighting SourcePawn khusus (tokenizer, bukan compiler)
-- [ ] Custom SourceMod API token dictionary/import daripada fail .inc
+- [x] Autocomplete daripada deklarasi SourcePawn dalam fail .inc yang dibuka
+- [ ] Import dan analisis dependensi .inc secara rekursif serta autocomplete semantik
 - [x] 23 mode bahasa tempatan dan loader dependensi berperingkat
 - [x] Self-host CodeMirror core, addon editor dan JSZip (tiada CDN)
 - [ ] PWA offline penuh dengan service worker (memerlukan pengecualian fail `sw.js` di root)
