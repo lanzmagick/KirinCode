@@ -1,0 +1,8 @@
+/* KirinCode 0.8 backup controls — lightweight, responsive, no changes to the header. */
+.backup-settings{display:flex;flex-direction:column;gap:6px;margin-top:13px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--panel2)}
+.backup-settings h3{margin:0;font-size:13px;color:var(--fg)}
+.backup-description{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+.backup-status{margin:3px 0;padding:7px 9px;font-size:11px;line-height:1.5;color:var(--accent2);border-radius:7px;background:var(--panel3);overflow-wrap:anywhere}
+.backup-actions{display:flex;gap:8px;flex-wrap:wrap}
+.backup-actions button{font-size:12px;flex:1;min-width:120px}
+@media(max-width:500px){.backup-settings{padding:10px}.backup-actions button{min-width:115px;padding:9px 8px}}

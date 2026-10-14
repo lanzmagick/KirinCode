@@ -21,6 +21,7 @@ get("assets/vendor/codemirror/LICENSE.md");
 get("assets/vendor/jszip/LICENSE.markdown");
 // Files listed in index.html are loaded at startup; lazy-loaded scripts are validated separately.
 const sourcePaths = [
+  "assets/js/drafts.js",
   "assets/js/app.js",
   "assets/js/repo-explorer.js",
   "assets/js/workbench-core.js",
@@ -37,7 +38,7 @@ const sourcePaths = [
 for (const path of sourcePaths) {
   assert.doesNotThrow(() => new Function(get(path)), "Invalid JavaScript syntax in " + path);
 }
-for (const path of ["assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/css/autocomplete.css", "assets/icons/icon.svg"]) get(path);
+for (const path of ["assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/css/autocomplete.css", "assets/css/drafts.css", "assets/icons/icon.svg"]) get(path);
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 assert.equal(ids.length, new Set(ids).size, "Duplicate HTML IDs");
@@ -49,7 +50,7 @@ for (const path of sourcePaths) {
 }
 
 const lazyLoadedPaths = new Set(["languages/_shared/simple.js"]);
-for (const path of [...sourcePaths.filter(path => !lazyLoadedPaths.has(path)), "assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/css/autocomplete.css", "assets/icons/icon.svg"]) {
+for (const path of [...sourcePaths.filter(path => !lazyLoadedPaths.has(path)), "assets/css/style.css", "assets/css/repo.css", "assets/css/workbench.css", "assets/css/autocomplete.css", "assets/css/drafts.css", "assets/icons/icon.svg"]) {
   assert.ok(html.includes('"' + path + '"'), "Missing startup asset path in HTML: " + path);
 }
 // A lazily loaded script is expected in the local language loader, NOT as a script tag in index.html.
@@ -57,10 +58,11 @@ const modeLoader = get("languages/loader.js");
 for (const path of lazyLoadedPaths) {
   assert.ok(modeLoader.includes(path.replace(/^languages\//, "")), "Lazy script not registered: " + path);
 }
-const dependencyOrder = ["languages/_shared/meta.js", "languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/loader.js", "languages/catalog.js", "assets/js/workbench-core.js", "languages/completions.js", "assets/js/app.js", "assets/js/autocomplete.js", "assets/js/workbench.js", "assets/js/repo-explorer.js"];
+const dependencyOrder = ["languages/_shared/meta.js", "languages/valve-keyvalues.js", "languages/sourcepawn.js", "languages/loader.js", "languages/catalog.js", "assets/js/workbench-core.js", "languages/completions.js", "assets/js/drafts.js", "assets/js/app.js", "assets/js/autocomplete.js", "assets/js/workbench.js", "assets/js/repo-explorer.js"];
 for (let i = 1; i < dependencyOrder.length; i++) {
   assert.ok(html.indexOf('src="' + dependencyOrder[i] + '"') > html.indexOf('src="' + dependencyOrder[i-1] + '"'), "Script order invalid");
 }
+for (const id of ["backup-status","backup-export-btn","backup-import-btn","backup-file-input"]) assert.ok(idSet.has(id), "Missing backup control: " + id);
 const selector = html.match(/<select id="language-select"[\s\S]*?<\/select>/);
 assert.ok(selector, "Language picker missing");
 const choices = new Set([...selector[0].matchAll(/<option value="([^"]+)"/g)].map(m => m[1]));

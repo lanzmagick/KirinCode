@@ -4,7 +4,7 @@
 
 **Laman (selepas GitHub Pages diaktifkan):** https://lanzmagick.github.io/KirinCode/
 
-## Ciri versi 0.7
+## Ciri versi 0.8
 
 - **Code viewer dan editor:** syntax highlighting, nombor baris, code folding, bracket matching, auto-close brackets, word wrap, tab spacing dan tetapan saiz font.
 - **Pelbagai bahasa:** 23 mode CodeMirror sumber tempatan dengan loading mengikut keperluan; pilihan tambahan C#, Ruby, Perl, Swift, Dart, Dockerfile, Diff, PowerShell dan TOML. Sokongan Java/Kotlin/C/C++ melalui mode C-like serta JSON/TypeScript melalui JavaScript.
@@ -21,7 +21,7 @@
 - **Live Preview:** paparan HTML dan Markdown sambil menaip. Desktop memaparkan editor dan preview sebelah-menyebelah; telefon menggunakan panel preview. HTML dijalankan dalam iframe sandbox tanpa JavaScript.
 - **Compare Code:** bandingkan dua tab terbuka, paparkan nombor baris dan perbezaan yang ditambah, dipadam atau diubah.
 - **Responsif:** sidebar mudah alih, tema dark/light dan kawalan untuk Android atau desktop.
-- **Pemulihan sesi:** draf kecil disimpan dalam sessionStorage untuk tab pelayar yang sama; tetapan UI menggunakan localStorage.
+- **Backup & Recovery:** draf disimpan dalam IndexedDB dan dipulihkan pada pembukaan seterusnya; sessionStorage lama masih menjadi fallback. Settings menyediakan Export/Import Backup JSON, termasuk kandungan yang belum dimuat turun dan pilihan bahasa tab.
 
 ### Had semasa
 
@@ -61,6 +61,16 @@ Pilih **Auto Detect** supaya extension fail memilih script tempatan secara autom
 ## Menggunakan mod SourcePawn
 
 Buka fail `.sp` atau `.inc` dan syntax highlighting akan dikesan secara automatik. Untuk fail tanpa extension, pilih **SourcePawn** daripada senarai bahasa di status bar. Sokongan warna meliputi kedua-dua sintaks lama dan newdecls. Pengesanan ralat compile belum disokong.
+
+## Backup & Recovery — Patch 0.8
+
+**Automatik:** KirinCode menyimpan kandungan setiap tab, nama/laluan fail, keadaan unsaved dan pilihan bahasa ke IndexedDB. Apabila KirinCode dibuka semula selepas Chrome ditutup, draf terakhir akan cuba dipulihkan. Jika IndexedDB tidak tersedia, KirinCode menggunakan fallback `sessionStorage` lama.
+
+**Manual:** buka **Settings → Backup & Recovery**. Tekan **Export Backup** untuk menyimpan fail JSON ke Downloads. Pilih **Import Backup** untuk memuatkan semula fail tersebut; aplikasi meminta pengesahan sebelum **menggantikan tab yang sedang terbuka**.
+
+**Had prestasi dan storan:** maksimum 32 fail, 2 juta aksara bagi setiap versi kandungan dan jumlah 8 juta aksara termasuk keadaan asal untuk pengesanan perubahan. Autosave dijadualkan kira-kira 900 ms selepas edit, serta dicuba semasa halaman disembunyikan. Jika kuota penuh atau IndexedDB gagal, status pada Settings akan memaparkan amaran. Simpan salinan penting secara manual — tiada jaminan setiap ketikan terakhir tersimpan jika pelayar dimatikan secara paksa.
+
+**Privasi:** IndexedDB hanya pada peranti dan profil pelayar yang sama. Clear site data, mod incognito atau pertukaran peranti boleh memadamkan draf. Backup JSON **tidak disulitkan** dan tiada sinkronisasi awan.
 
 ## Autocomplete Code — Patch 0.7
 
@@ -124,13 +134,15 @@ KirinCode/
 │   │   ├── style.css
 │   │   ├── repo.css
 │   │   ├── workbench.css
-│   │   └── autocomplete.css
+│   │   ├── autocomplete.css
+│   │   └── drafts.css
 │   ├── js/
 │   │   ├── app.js
 │   │   ├── repo-explorer.js
 │   │   ├── workbench-core.js
 │   │   ├── workbench.js
-│   │   └── autocomplete.js
+│   │   ├── autocomplete.js
+│   │   └── drafts.js
 │   └── icons/
 │       └── icon.svg
 ├── languages/
@@ -149,7 +161,8 @@ KirinCode/
 │   ├── test-workbench.mjs
 │   ├── test-vendor.mjs
 │   ├── test-languages.mjs
-│   └── test-completion.mjs
+│   ├── test-completion.mjs
+│   └── test-drafts.mjs
 └── .github/
     └── workflows/
         └── validate.yml
@@ -170,6 +183,8 @@ KirinCode/
 - `assets/js/autocomplete.js`, `assets/css/autocomplete.css` — antaramuka cadangan desktop/Android
 - `scripts/test-sourcepawn.mjs` — ujian token SourcePawn
 - `scripts/test-workbench.mjs` — ujian Markdown, iframe CSP, diff dan sambungan UI
+- `assets/js/drafts.js`, `assets/css/drafts.css` — simpanan IndexedDB dan kawalan Backup
+- `scripts/test-drafts.mjs` — ujian simpan/pulih draf dan backup JSON
 - `scripts/check.mjs` — pemeriksaan sintaks, laluan fail dan UI
 - .github/workflows/validate.yml — semakan automatik semasa push/PR
 
@@ -190,7 +205,8 @@ KirinCode/
 - [x] Live Preview HTML/Markdown menggunakan iframe sandbox dan CSP terhad
 - [x] Compare Code dua tab dengan diff baris responsif
 - [ ] Live Preview Markdown berasaskan renderer lengkap CommonMark/GFM dan ujian pelayar automatik
-- [ ] Offline PWA dan pilihan backup draf
+- [x] Simpanan IndexedDB dan Export/Import Backup JSON
+- [ ] Offline PWA sepenuhnya melalui service worker
 - [ ] Penambahbaikan aksesibiliti, ujian E2E dan penskalaan fail besar
 
 ## Lesen

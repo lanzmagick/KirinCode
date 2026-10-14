@@ -9,6 +9,7 @@ let languageLoadTicket = 0;
 const listeners = new Set();
 function emit(kind){for(const callback of listeners){try{callback(kind);}catch(error){console.error("KirinCode subscriber:",error);}}}
 let current = null, seq = 0, quiet = false, toastTimeout, autosaveTimeout, dragLevel = 0;
+let draftsReady = false, draftTimer = null, draftWrites = Promise.resolve();
 let config = {theme:"dark",wrap:false,font:14,tab:2};
 try { Object.assign(config, JSON.parse(localStorage.getItem("kirincode-settings-v1") || "{}")); } catch(e) {}
 function say(message) {
@@ -110,8 +111,34 @@ function position() {
   $("status-length").textContent=cm.getValue().length.toLocaleString()+" aksara";
   $("status-file").textContent=current?current.path:"Tiada fail";
 }
+function draftStatus(message) {
+  const node=$("backup-status");
+  if(node)node.textContent=message;
+}
+function snapshotWorkspace(){
+  return {active:current?current.id:null,files:tabs.map(file=>({
+    id:file.id,path:file.path,content:file.doc.getValue(),saved:file.saved,override:file.override
+  }))};
+}
+function persistDraft(){
+  if(!draftsReady||quiet)return;
+  clearTimeout(draftTimer);
+  const snapshot=snapshotWorkspace();
+  // Serial writes keep the most recent edit from being replaced by a slower older save.
+  draftWrites=draftWrites.catch(()=>{}).then(()=>window.KirinCodeDrafts.save(snapshot))
+    .then(()=>{draftStatus("Draf disimpan dalam peranti · "+new Date().toLocaleTimeString("ms-MY",{hour:"2-digit",minute:"2-digit"}));},
+      error=>{draftStatus("Backup gagal: "+error.message+". Eksport backup secara manual.");});
+}
+function scheduleDraft(){
+  if(!draftsReady||quiet)return;
+  clearTimeout(draftTimer);
+  draftStatus("Menyimpan draf...");
+  draftTimer=setTimeout(persistDraft,900);
+}
+
 function saveSession() {
   if(quiet)return;
+  scheduleDraft();
   clearTimeout(autosaveTimeout);
   autosaveTimeout=setTimeout(()=>{
     try {
@@ -338,22 +365,76 @@ async function githubFile() {
     add(path,result);say("Kod GitHub berjaya dibuka.");
   }catch(e){say("GitHub: "+e.message);}
 }
-function restoreSession() {
-  try {
-    const saved=JSON.parse(sessionStorage.getItem("kirincode-session-v1")||"null");
-    if(!saved||!Array.isArray(saved.files)||!saved.files.length)return false;
-    quiet=true;
-    let target=null;
-    for(const f of saved.files.slice(0,16)) {
-      if(!f||typeof f.path!=="string"||typeof f.content!=="string")continue;
-      const obj=add(f.path,f.content,false,typeof f.saved==="string"?f.saved:f.content);
-      if(typeof f.override==="string" && window.KirinCodeLanguages.has(f.override))obj.override=f.override;
-      if(f.id===saved.active)target=obj;
+function applySnapshot(snapshot){
+  const clean=window.KirinCodeDrafts.validateSnapshot(snapshot);
+  clearTimeout(autosaveTimeout);clearTimeout(draftTimer);
+  quiet=true;
+  let chosen=null;
+  try{
+    tabs.splice(0);current=null;seq=0;
+    for(const file of clean.files){
+      const opened=add(file.path,file.content,false,file.saved);
+      if(window.KirinCodeLanguages.has(file.override))opened.override=file.override;
+      if(file.id===clean.active)chosen=opened;
     }
-    if(tabs.length)activate((target||tabs[0]).id);
-    return !!tabs.length;
-  }catch(e){return false;}finally{quiet=false;}
+    if(tabs.length)activate((chosen||tabs[0]).id);
+    else{
+      cm.swapDoc(new CodeMirror.Doc("","text/plain"));
+      cm.setOption("readOnly",true);
+      $("status-lang").textContent="Plain Text";
+    }
+    render();position();emit("files");
+    return tabs.length>0;
+  }finally{quiet=false;}
 }
+function restoreSession(){
+  try{
+    const data=JSON.parse(sessionStorage.getItem("kirincode-session-v1")||"null");
+    return data&&Array.isArray(data.files)&&data.files.length?applySnapshot(data):false;
+  }catch(error){return false;}
+}
+function exportBackup(){
+  if(!tabs.length){say("Tiada fail untuk dieksport.");return;}
+  try{
+    const json=window.KirinCodeDrafts.makeBackup(snapshotWorkspace());
+    const stamp=new Date().toISOString().slice(0,16).replace("T","-").replace(":","-");
+    download(new Blob([json],{type:"application/json;charset=utf-8"}),"KirinCode-backup-"+stamp+".json");
+    say("Backup JSON berjaya dieksport.");
+  }catch(error){say("Backup: "+error.message);}
+}
+async function importBackup(file){
+  if(!file)return;
+  if(file.size>64*1024*1024){say("Backup terlalu besar (maksimum 64 MB).");return;}
+  let snapshot;
+  try{snapshot=window.KirinCodeDrafts.parseBackup(await file.text());}
+  catch(error){say("Fail backup tidak sah: "+error.message);return;}
+  if(!confirm("Gantikan semua tab yang sedang dibuka dengan "+snapshot.files.length+" fail daripada backup? Eksport backup semasa dahulu jika perlu."))return;
+  try{
+    applySnapshot(snapshot);
+    saveSession();
+    persistDraft();
+    draftStatus("Backup diimport · "+snapshot.files.length+" fail");
+    say("Backup dipulihkan: "+snapshot.files.length+" fail.");
+  }catch(error){say("Pemulihan gagal: "+error.message);}
+}
+async function startWorkspace(){
+  let restored=false, storageError=null;
+  draftStatus("Memeriksa draf IndexedDB...");
+  try{
+    const saved=await window.KirinCodeDrafts.load();
+    if(saved&&saved.files.length && !tabs.length){
+      restored=applySnapshot(saved);
+      if(restored)say("Draf lama dipulihkan daripada IndexedDB.");
+    }
+  }catch(error){storageError=error;}
+  if(!restored&&!tabs.length)restored=restoreSession();
+  if(!restored&&!tabs.length)add("welcome.sp","// KirinCode — Multi-Language Code Editor\n// Buka fail dari peranti, ZIP atau pautan GitHub.\n\n#include <sourcemod>\n\npublic void OnPluginStart()\n{\n    PrintToServer(\"Hello from KirinCode!\");\n}\n");
+  draftsReady=true;
+  if(storageError)draftStatus("IndexedDB tidak tersedia: "+storageError.message+". Gunakan Export Backup.");
+  else scheduleDraft();
+  render();position();
+}
+
 $("new-btn").onclick=makeNew;$("new-side-btn").onclick=makeNew;
 $("open-btn").onclick=chooseFiles;$("open-side-btn").onclick=chooseFiles;
 $("save-btn").onclick=downloadCurrent;$("zip-btn").onclick=downloadZip;
@@ -384,6 +465,13 @@ $("theme-select").onchange=e=>{config.theme=e.target.value;applyConfig();};
 $("wrap-select").onchange=e=>{config.wrap=e.target.value==="true";applyConfig();};
 $("font-input").onchange=e=>{config.font=e.target.value;applyConfig();};
 $("tab-select").onchange=e=>{config.tab=e.target.value;applyConfig();};
+$("backup-export-btn").onclick=exportBackup;
+$("backup-import-btn").onclick=()=>$("backup-file-input").click();
+$("backup-file-input").onchange=e=>{
+  const file=e.target.files&&e.target.files[0];
+  e.target.value="";
+  importBackup(file);
+};
 $("menu-btn").onclick=showSidebar;
 $("sidebar-close").onclick=hideSidebar;$("sidebar-scrim").onclick=hideSidebar;
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){hideSidebar();settingsVisible(false);showFind(false);}});
@@ -425,7 +513,8 @@ window.KirinCode = Object.freeze({
     return ()=>listeners.delete(listener);
   }
 });
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persistDraft();});
+window.addEventListener("pagehide",persistDraft);
 applyConfig();
-if(!restoreSession())add("welcome.sp","// KirinCode — Multi-Language Code Editor\n// Buka fail dari peranti, ZIP atau pautan GitHub.\n\n#include <sourcemod>\n\npublic void OnPluginStart()\n{\n    PrintToServer(\"Hello from KirinCode!\");\n}\n");
-render();position();
+startWorkspace();
 })();

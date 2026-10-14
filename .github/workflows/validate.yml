@@ -28,3 +28,4 @@ jobs:
           node scripts/test-languages.mjs
           node scripts/test-vendor.mjs
           node scripts/test-completion.mjs
+          node scripts/test-drafts.mjs
